@@ -5,6 +5,8 @@ date: 2026-05-18
 categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 ---
+## Intro
+During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pretty heavily. But, I feel if I keep at that approach eventually it will click. No one knows everything all at once. I was hestitant to take on Ghidra because the depth is so vast, but while I was plugging away I found the process quite enjoyable. 
 
 ## IOCs
 
@@ -20,9 +22,10 @@ tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 | C2 Protocol | `Web Socket (ws:// and wss://)` |
 
 ---
-During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pretty heavily. But, I feel if I keep at that approach eventually it will click. No one knows everything all at once. I was hestitant to take on Ghidra because the depth is so vast, but while I was plugging away I found the process quite enjoyable. 
 
-AI was really interested in the TLS portion in the beginning. It thought the malware C2 configuration was linked there. Eventually, it wound up being a dead end and we pivoted to the exported function DLLInstall. I walked through the pseudo C code and found the malware required a few conditional checks to pass before running properly. The main check was the filename. Now, in hindsight a simple VirusTotal lookup would have told me the filename, but I chose the hard way and decided to debug the program. 
+
+## Ghidra Static Analysis
+AI was really interested in the TLS portion in the beginning. It thought the malware C2 configuration was linked there. Eventually, it wound up being a dead end and we pivoted to the exported function DllInstall. I walked through the pseudo C code and found the malware required a few conditional checks to pass before running properly. The main check was the filename. Now, in hindsight a simple VirusTotal lookup would have told me the filename, but I chose the hard way and decided to debug the program. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
 
@@ -83,14 +86,15 @@ A technique I am learning is calculating the relative virtual address. Below is 
 
 In x64dbg, we load up our malware and open memory map. We locate runner.ocx and note the image base. We then add the Ghidra offset + x64dbg image base address. The result is the RVA of the decryption function. 
  
-Calculating Function RVA (Ghidra + x64dbg)
-FUN_25819fe10
-This is the decryption function. The function is called before every command executes in CommandDispatch.
-    
+# Calculating RVA (Ghidra + x64dbg)
+The decryption function FUN_25819fe10 is called before every command executes in the CommandDispatch function.
+
 <img src="/assets/images/posts/2026-05-18-runner-ocx/ghidra-imagebase.png" alt="ghidra imagebase" width="400">
+
 Ghidra base image is 257e90000
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/x64-imagebase.png" alt="x64-imagebase" width="400">
+
 Base image of runner.ocx. Note it's ASLR, so it changes frequently during restarts.
     
 Let's calculate the RVA so we can breakpoint on this function in x64dbg.
@@ -136,6 +140,8 @@ While we were able to get the C2 to respond to the commands, the syntax wasn't q
 
 During debugging, I found the software dropped this file in AppData. It's not keylogger information. It's debugging information related to the malicious software C:\Users\userID\AppData\Local\Temp\lg.txt. I first thought this was the keylogger output, but it turned out to be debugging information from the malware.
 
+# Outro
+I must admit that this was quite the experience. Developing a C2 responder was the highlight of the investigation. There are many malware analysis avenues I did not pursue. Overtime, I'll look to build upon my report more thoroughly. For example, MITRE, Network IOCs, Floss & Capa findings as well the extent of the malware capability.
 
 ## References
 
@@ -145,4 +151,4 @@ During debugging, I found the software dropped this file in AppData. It's not ke
 
 ---
 
-*Analysis performed: 2026-05-18 | Analyst: John Ryan
+Analysis performed: 2026-05-18 | Analyst: John Ryan
