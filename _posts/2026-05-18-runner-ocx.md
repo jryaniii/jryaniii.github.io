@@ -6,23 +6,18 @@ categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 ---
 ## Intro
-During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pretty heavily. But, I feel if I keep at that approach eventually it will click. No one knows everything all at once. I was hestitant to take on Ghidra because the depth is so vast, but while I was plugging away I found the process quite enjoyable. 
+During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pretty heavily. But, I feel if I keep at that approach eventually it will click. No one knows everything all at once. I was hesitant to take on Ghidra because the depth is so vast, but while I was plugging away I found the process quite enjoyable. 
 
-## IOCs
+## IOC Summary
 
 | Field         | Value |
 |---------------|-------|
 | File Name     | `runner.ocx` |
 | SHA256        | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
-| File Size     | `3.83 MB` |
-| File Type     | `PE64` |
-| Compile Time  | `2026-05-01 08:56:47 UTC` |
 | C2 Domain | `xtrafftrck.net` |
-| C2 Port | `3000`|
-| C2 Protocol | `Web Socket (ws:// and wss://)` |
+
 
 ---
-
 
 ## Ghidra Static Analysis
 AI was really interested in the TLS portion in the beginning. It thought the malware C2 configuration was linked there. Eventually, it wound up being a dead end and we pivoted to the exported function DllInstall. I walked through the pseudo C code and found the malware required a few conditional checks to pass before running properly. The main check was the filename. Now, in hindsight a simple VirusTotal lookup would have told me the filename, but I chose the hard way and decided to debug the program. 
@@ -36,7 +31,7 @@ Alas, I found the required filename "runner.ocx." I should mention that if the m
 ## AgentThread Functionality
 ```
 WSAStartup
-DNS lookup for xtrafftrck.net
+DNS lookup for xtrafftrck[.]net
 TCP connection to port 3000
 WebSocket handshake
 C2 communication
@@ -51,8 +46,9 @@ In an effort to get better at x64dbg and reverse engineering, I set off to find 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/port-reveal.png" alt="x64dbg reveals C2 port" width="800">
 
-I dumped RDX to memory to reveal 2 bytes with a value of 0xBB8 which translates to 3,000 or port 3000. When you see ws2_32.dll being called for a network connection, the likely function is getaddrinfo or connect. For getaddrinfo the signature is:
-## Getaddrinfo API 
+I dumped RDX to memory to reveal 2 bytes with a value of 0xBB8 which translates to 3,000 or port 3000. When you see ws2_32.dll being called for a network connection, the likely function is getaddrinfo or connect. 
+
+## Mapping Getaddrinfo API to Registers
 ```
 getaddrinfo(hostname, port_or_service, hints, result)
 In x64 Windows calling convention those map to:
@@ -140,6 +136,21 @@ During debugging, I found the software dropped this file in AppData. It's not ke
 
 # Outro
 I must admit that this was quite the experience. Developing a C2 responder was the highlight of the investigation. There are many malware analysis avenues I did not pursue. Overtime, I'll look to build upon my report more thoroughly. For example, MITRE, Network IOCs, Floss & Capa findings as well the extent of the malware capability.
+
+## IOCs
+
+| Field         | Value |
+|---------------|-------|
+| File Name     | `runner.ocx` |
+| SHA256        | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
+| File Size     | `3.83 MB` |
+| File Type     | `PE64` |
+| Compile Time  | `2026-05-01 08:56:47 UTC` |
+| C2 Domain | `xtrafftrck.net` |
+| C2 Port | `3000`|
+| C2 Protocol | `Web Socket (ws:// and wss://)` |
+
+---
 
 ## References
 
