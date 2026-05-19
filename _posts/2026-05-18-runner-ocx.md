@@ -91,13 +91,11 @@ The decryption function FUN_25819fe10 is called before every command executes in
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/ghidra-imagebase.png" alt="ghidra imagebase" width="400">
 
-Ghidra base image is 257e90000
+
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/x64-imagebase.png" alt="x64-imagebase" width="400">
 
-Base image of runner.ocx. Note it's ASLR, so it changes frequently during restarts.
-    
-Let's calculate the RVA so we can breakpoint on this function in x64dbg.
+The two screenshots above highlight the base images for Ghidra and x64dbg. Ghidra base image is 257e90000. Let's calculate the RVA so we can breakpoint on this function in x64dbg.
 
 ## Ghidra Offset Calculation
 
