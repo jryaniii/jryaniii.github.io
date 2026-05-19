@@ -76,7 +76,7 @@ whoami
 ```
 <img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="400">
 
-You can see the encrypted command named &DAT_2581afcc0 in the screenshot below. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
+You can see the encrypted command named &DAT_2581afcc0 in the screenshot above. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
 
 A technique I am learning is calculating the relative virtual address. Below is my process for calculating RVA. We use the decryption function address and subtract it from the base address in Ghidra. The result is an offset that we will use to calculate the RVA in x64dbg.
 
@@ -126,9 +126,9 @@ With the help of Claude AI, I created a responder python script for the C2 domai
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/c2-domain-response.png" alt="c2-domain-response" width="800">
     
-Above you can see the python script in action. It took some time to get here but I finally got a C2 RECV response. The C2 server expected "type" as a field for the command. Without type, the C2 server would not respond. I used the "type" field to generate a response from the C2. Without this field, it would not respond. It took a lot of trial and error. This screenshot makes it look easy.
+Above you can see the python script in action. It took some time to get here but I finally got a C2 RECV response. The C2 server expected "type" as a field for the command. Without proper field name, the malware would not respond. It took a lot of trial and error. This screenshot makes it look easy.
 
-While we were able to get the C2 to respond to the commands, the syntax wasn't quite there and it replied with an error. It was at this point I decided to stop tinkering with getting the C2 to respond properly. In the end, we created a working C2 responder that triggered a real C2 response. Very cool.
+While we were able to get the malware to respond to fake C2 python server, the syntax wasn't quite there. You can see in the screenshot it replied with an error. At this point, I decided to stop tinkering and gave up on achieving the proper syntax. In the end, we created a working C2 responder that triggered a real response from the malware. Very cool.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/lg-debug.png" alt="lg-debug" width="800">
 
