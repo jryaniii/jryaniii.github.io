@@ -14,7 +14,7 @@ During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pr
 |---------------|-------|
 | File Name     | `runner.ocx` |
 | SHA256        | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
-| C2 Domain | `xtrafftrck.net` |
+| C2 Domain | `xtrafftrck[.]net` |
 
 
 ---
@@ -146,7 +146,7 @@ I must admit that this was quite the experience. Developing a C2 responder was t
 | File Size     | `3.83 MB` |
 | File Type     | `PE64` |
 | Compile Time  | `2026-05-01 08:56:47 UTC` |
-| C2 Domain | `xtrafftrck.net` |
+| C2 Domain | `xtrafftrck[.]net` |
 | C2 Port | `3000`|
 | C2 Protocol | `Web Socket (ws:// and wss://)` |
 
