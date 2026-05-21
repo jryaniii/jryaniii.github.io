@@ -71,7 +71,7 @@ A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, 
 | `22` | SSH | `OpenSSH 9.6p1` |
 | `80` | HTTP | `nginx 1.24.0` — Ubuntu |
 | `443` | HTTPS | `nginx 1.24.0` — Ubuntu |
-| `3000` | Chopi Monitoring Dashboard | Operator C2 panel — Node.js Express |
+| `3000` | Chopi Monitoring Dashboard | Operator C2 panel — Node[.]js Express |
 | `4000` | Unknown | `HTTP/1.1 400 Bad Request — Connection: close` |
 
 ## Screenly[.]cam 
