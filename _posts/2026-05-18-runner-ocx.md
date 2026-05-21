@@ -58,22 +58,23 @@ In x64 Windows calling convention those map to:
 At this point, I wanted to learn more about the C2 commands. Earlier in Ghidra, I found a function for C2 command dispatch and aptly renamed it to CommandDispatcher. A majority of the commands are encrypted and look to be decrypted at runtime, but a few were in plaintext. I've listed them below.
 ## Plaintext C2 Commands
 
-```
-token_run
-cdp_start
-cdp_stop
-cdp_send
-wpad_start
-wpad_stop
-wpad_hashes
-chrome_upload
-chrome_extract
-cred_logon
-cred_exec
-net_enumerate
-remote_logon
-whoami
-```
+| Tactic | Technique | Command |
+|--------|-----------|---------|
+| `Privilege Escalation / Defense Evasion` | `T1134 - Access Token Manipulation` | `token_run` |
+| `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_start` |
+| `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_stop` |
+| `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_send` |
+| `Credential Access` | `T1557.001 - LLMNR/NBT-NS Poisoning` | `wpad_start` |
+| `Credential Access` | `T1557.001 - LLMNR/NBT-NS Poisoning` | `wpad_stop` |
+| `Credential Access` | `T1557.001 - LLMNR/NBT-NS Poisoning` | `wpad_hashes` |
+| `Credential Access` | `T1539 - Steal Web Session Cookie` | `chrome_upload` |
+| `Credential Access` | `T1555.003 - Credentials from Web Browsers` | `chrome_extract` |
+| `Lateral Movement` | `T1021.002 - SMB/Windows Admin Shares` | `cred_logon` |
+| `Lateral Movement / Execution` | `T1021.002 - SMB/Windows Admin Shares` | `cred_exec` |
+| `Discovery` | `T1018 - Remote System Discovery` | `net_enumerate` |
+| `Lateral Movement` | `T1550.002 - Pass the Hash` | `remote_logon` |
+| `Discovery` | `T1033 - System Owner/User Discovery` | `whoami` |
+
 <img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="400">
 
 You can see the encrypted command named &DAT_2581afcc0 in the screenshot above. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
@@ -120,7 +121,7 @@ Unfortunately, setting the breakpoint wasn't the answer. Dynamic debugging revea
 
 The next idea was to create a C2 responder in Python. I originally used FakeNet-NG to get the malware to make a connection, but the malware required a response from the C2 to decrypt the commands. The command only decrypted at runtime when specifically called.
 
-With the help of Claude AI, I created a responder python script for the C2 domain on port 3000. This is very cool as we're able to interact with the malicious executable as if we were the C2 server! To get this to work properly, I had to edit the windows host file C:\windows\system32\drivers\etc\hosts and add 127.0.0.1 xtrafftrck[.]net.
+I created a responder python script for the C2 domain on port 3000. This is very cool as we're able to interact with the malicious executable as if we were the C2 server! To get this to work properly, I had to edit the windows host file C:\windows\system32\drivers\etc\hosts and add 127.0.0.1 xtrafftrck[.]net.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/python-c2-script.png" alt="python-c2-script" width="800">
 
