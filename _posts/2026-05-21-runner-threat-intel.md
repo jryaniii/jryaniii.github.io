@@ -94,7 +94,7 @@ Tags | `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware` |
 
 We've seen similar tags now between the two domains. Let's do an open search on Google on the `Chopi` campaign tag. Pivoting to Google, I lookup `malware chopi` and I'm presented with a link to Threatfox.
 
-<img src="/assets/images/posts/2026-05-21-runner-threat-intel\figure1-threatfox.png" alt="lg-debug" width="800">
+<img src="/assets/images/posts/2026-05-21-runner-threat-intel/figure1-threatfox.png" alt="lg-debug" width="800">
 
 Check out the results! Threat researcher `Lenny_3BO` has already submitted his own findings for the `Chopi` malware campaign. Comparing his submissions against our malware sample reveals overlapping malicious domains and IPs. Very cool!
 
