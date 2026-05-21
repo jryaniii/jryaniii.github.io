@@ -56,7 +56,7 @@ In x64 Windows calling convention those map to:
     - RDX = port/service string > points to "3000" as a string
  ```       
 At this point, I wanted to learn more about the C2 commands. Earlier in Ghidra, I found a function for C2 command dispatch and aptly renamed it to CommandDispatcher. A majority of the commands are encrypted and look to be decrypted at runtime, but a few were in plaintext. I've listed them below.
-## Plaintext C2 Commands
+## Plaintext C2 Commands and Tactics
 
 | Tactic | Technique | Command |
 |--------|-----------|---------|
