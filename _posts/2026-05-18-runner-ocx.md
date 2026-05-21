@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Malware Analysis: runner.ocx"
+title: "Part 1: Runner.ocx Malware Analysis "
 date: 2026-05-18
 categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
@@ -152,6 +152,15 @@ I must admit that this was quite the experience. Developing a C2 responder was t
 | C2 Protocol | `Web Socket (ws:// and wss://)` |
 
 ---
+
+# Threat Intelligence
+| Domain | Detections | First Seen | Assessment |
+|--------|------------|------------|------------|
+| `paysolutions.ink` | 19/91 | 2026-04-28 | High confidence related — high detections, same IP, same timeframe as `xtrafftrck.net` |
+| `screenly.cam` | 18/91 | 2026-04-01 | High confidence related — `.cam` not `.com`, likely typosquatting `screenly.com` |
+| `xtrafftrck.net` | 20/91 | 2026-04-20 | Sample C2 domain |
+| `ahdaratlegalservices.com` | 18/91 | 2026-03-18 | High detections — worth investigating |
+| `aurekh.com` | 16/91 | 2026-03-18 | High detections — worth investigating |
 
 ## References
 

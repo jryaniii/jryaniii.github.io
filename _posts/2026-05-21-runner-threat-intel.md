@@ -1,5 +1,10 @@
-# Part 2: Threat Intelligence
-
+---
+layout: post
+title: "Part 2: Runner.ocx Threat Intelligence"
+date: 2026-05-21
+categories: [malware, threat intelligence,]
+tags: [virustotal, shodan, censys, threafox]
+---
 ## Overview
 
 I performed threat intelligence on the runner.ocx sample. Using various threat intel web platforms, I uncovered what appears to be a dedicated threat campaign.
@@ -14,6 +19,7 @@ I performed threat intelligence on the runner.ocx sample. Using various threat i
 | SHA256 | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
 | C2 Domain | `xtrafftrck[.]net` |
 | C2 Port | `3000` |
+
 ---
 ## Getting Started - Virus Total
 Virus Total is a great way to start. It reveals a gold mine of information like domain reputation, related IP addresses, https certificate details, passive DNS & community notes.
@@ -41,14 +47,14 @@ We've also uncovered interesting tags submitted by a community researcher. The r
 
 Tags: `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware` 
 
-Searching on the new IP, 70.34.205[.]43, reveals a host of new information. We now have 4 new domains potentially . 
+Searching on the new IP, 70.34.205[.]43, reveals a host of new information. We now have 4 new domains potentially. 
 
 | Domain | Detections | First Seen | Pivot Method |
 |--------|------------|------------|--------------|
 | `screenly[.]cam` | 18/91 | 2026-04-01 | Shared IP + Certificate anchor |
-| `paysolutions[.]ink` | 19/91 | 2026-04-28 | Shared IP + Certificate |
-| `ahdaratlegalservices[.]com` | 18/91 | 2026-03-18 | Shared IP + Certificate |
-| `aurekh[.]com` | 16/91 | 2026-03-18 | Shared IP + Censys attribution |
+| `paysolutions[.]ink` | 19/91 | 2026-04-28 | Shared IP |
+| `ahdaratlegalservices[.]com` | 18/91 | 2026-03-18 | Shared IP |
+| `aurekh[.]com` | 16/91 | 2026-03-18 | Shared IP + Shared Certificate |
 
 ## Shodan.io
 
@@ -57,7 +63,7 @@ The later is a VPS hosting service. I provides the infrastructure for screenly[.
 
 A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, has low indentification requirements and is commonly used by threat actors. It's most likely not worth pivoting into this domain. What does seem interesting is screenly, we've now seen this domain across two different tools.
 
-## Shodan - 70.34.205[.]43 - Infrastructure
+## Shodan.io Artifacts
 
 | Property | Value |
 |----------|-------|
@@ -71,7 +77,7 @@ A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, 
 | `22` | SSH | `OpenSSH 9.6p1` |
 | `80` | HTTP | `nginx 1.24.0` — Ubuntu |
 | `443` | HTTPS | `nginx 1.24.0` — Ubuntu |
-| `3000` | Chopi Monitoring Dashboard | Operator C2 panel — Node[.]js Express |
+| `3000` | Chopi Monitoring Dashboard | Operator C2 panel — Node.js Express |
 | `4000` | Unknown | `HTTP/1.1 400 Bad Request — Connection: close` |
 
 ## Screenly[.]cam 
@@ -88,7 +94,7 @@ I searched Censys for the other domains Virus Total provided but found no certif
 ## Virus Total - Screenly
 Let's go back to Virus Total and review screenly[.]cam. This time let's look at the community notes provided by `JaffaCakes118`. He references the tags seen below. Interesting, they look oddly similar to the tags we saw on our C2 domain earlier. 
 
-Tags | `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware` |
+Tags: `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware`
 
 ## Google
 
@@ -126,8 +132,8 @@ Operator manages victims via Chopi Monitoring Dashboard
 
 ## References
 
-[Threat Fox](https://threatfox.abuse.ch/browse/tag/chopi/)
-[VirusTotal](https://virustotal.com)
-[Search Censys](https://search.censys.com)
-[Shodan.io](https://shodan.io)
+- [Threat Fox](https://threatfox.abuse.ch/browse/tag/chopi/)
+- [VirusTotal](https://virustotal.com)
+- [Censys](https://search.censys.com)
+- [Shodan.io](https://shodan.io)
 
