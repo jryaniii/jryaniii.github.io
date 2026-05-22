@@ -37,9 +37,9 @@ Initial analysis confirms the following:
 ## Floss - String Analysis
 Floss uses advanced static analysis techniques to automatically extract and deobfuscate all strings from malware binaries. 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-analysis-loading.png" alt="floss-analysis-loading" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-analysis-loading.png" alt="floss-analysis-loading" width="800" style="display:block; margin-left:0;>
 
-Using floss, we uncover a C2 configuration  intriguing strings.
+Using floss, we uncover some intriguing strings.
 
 - DllInstall: Koki=
 - Koki cmd=[
@@ -59,7 +59,7 @@ Floss also reveals a few other malware capabilities.
 4. Clipboard Access
 5. Microphone recording
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block; margin-left:0;>
 
 We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could summize AgentThread won't start if the filename check does not pass.
 
