@@ -37,7 +37,7 @@ Initial analysis confirms the following:
 ## Floss - String Analysis
 Floss uses advanced static analysis techniques to automatically extract and deobfuscate all strings from malware binaries. 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-analysis-loading.png" alt="floss-analysis-loading" width="800" style="display:block; margin-left:0;>
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-analysis-loading.png" alt="floss-analysis-loading" width="800" style="display:block; margin-left:0;">
 
 Using floss, we uncover some intriguing strings.
 
@@ -59,7 +59,7 @@ Floss also reveals a few other malware capabilities.
 4. Clipboard Access
 5. Microphone recording
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block; margin-left:0;>
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block; margin-left:0;">
 
 We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could summize AgentThread won't start if the filename check does not pass.
 
@@ -73,14 +73,14 @@ The results are in! The malware has low entropy and is thus not packed. Lucky us
 
 ## PEStats
 
-PEStats is a custom tool built by SANs instructor Anoj Soni. This tool assists by providing binary compile timestamps, exports, packing, entry pooints and internal file name of the malware.
+PEStats is a custom tool built by SANs instructor Anoj Soni. This tool assists by providing binary compile timestamps, exports, packing, entry points and internal file name of the malware.
 
-1. Compile timestamp is 2026-05-01 08:56:47 UTC
-2. No Packing confirmed
-3. TLS callbacks 1 & 2 entry points (0x257e91340, 0x257e91320)
-4. Unsigned binary
-5. Three exports (DllInstall, DllRegisterServer, DllUnregisterServer)
-6. Internal name is the binary name (runner.dll) not runner.ocx
+1. Compile timestamp is `2026-05-01 08:56:47 UTC`
+2. `No Packing` confirmed
+3. TLS callbacks 1 & 2 entry points `(0x257e91340, 0x257e91320)`
+4. `Unsigned binary`
+5. Three exports `(DllInstall, DllRegisterServer, DllUnregisterServer)`
+6. Internal name is the binary name `(runner.dll)` not `runner.ocx`
 
 The TLS callbacks are interesting. TLS callbacks execute before code. This section of the executable can be used for anti-debugging capability.
 
