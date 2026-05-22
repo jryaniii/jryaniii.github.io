@@ -67,7 +67,7 @@ We also come across what appears to be a conditional check. Dllinstall is refere
 
 Using Detect-it-Easy, we can determine if our malware is packed. By examining levels of entropy or randomness, we can determine whether the malware has been packed.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="400">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="400" style="display:block; margin-left:0;">
 
 The results are in! The malware has low entropy and is thus not packed. Lucky us!
 
@@ -128,7 +128,7 @@ At this point, I wanted to learn more about the C2 commands. Earlier in Ghidra, 
 
 | Tactic | Technique | Command |
 |--------|-----------|---------|
-| `Privilege Escalation / Defense Evasion` | `T1134 - Access Token Manipulation` | `token_run` |
+| `Privilege Escalation / Def. Evasion` | `T1134 - Access Token Manipulation` | `token_run` |
 | `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_start` |
 | `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_stop` |
 | `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_send` |
