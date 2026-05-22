@@ -91,40 +91,7 @@ During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pr
 
 AI was really interested in the TLS portion in the beginning. It thought the malware C2 configuration was linked there. Eventually, it wound up being a dead end and we pivoted to the exported function DllInstall. I walked through the pseudo C code and found the malware required a few conditional checks to pass before running properly. The main check was the filename. Now, in hindsight a simple VirusTotal lookup would have told me the filename, but I chose the hard way and decided to debug the program. 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
-
-The first step was to calculate the RVA (Relative Virtual Address) for the DLLInstall function and set a breakpoint. Or, as it turns out, I could have just looked at the symbols tab and set a breakpoint there. I landed on the DllInstall API call in x64dbg and proceeded to step through the code. Alas, I found the required filename "runner.ocx." 
-
-I should mention that if the malware was not correctly named the AgentThread function FUN_257ea2af0 would not start. This means the following would not occur:
-
-## AgentThread Functionality
-```
-WSAStartup
-DNS lookup for xtrafftrck[.]net
-TCP connection to port 3000
-WebSocket handshake
-C2 communication
-```
-<img src="/assets/images/posts/2026-05-18-runner-ocx/fakenet-ng.png" alt="x64dbg reveals proper filename" width="800">
-
-I used FakeNet-NG for dynamic network analysis. After renaming dr-dll.exe to runner.ocx, the AgentThread started! The filename check passed and it ran it's initialization code.
-
-<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain.png" alt="fakenet C2 activity" width="800">
-
-In an effort to get better at x64dbg and reverse engineering, I set off to find where in the malware the C2 and port were called. To do this I set a breakpoint on ws2_32connect. Once I landed on the breakpoint, I stepped through the code until I was able to find the C2 domain. VirusTotal confirms xtrafftrck[.]net is still live and malicious with 20/93 vendors flagging.
-
-<img src="/assets/images/posts/2026-05-18-runner-ocx/port-reveal.png" alt="x64dbg reveals C2 port" width="800">
-
-I dumped RDX to memory to reveal 2 bytes with a value of 0xBB8 which translates to 3,000 or port 3000. When you see ws2_32.dll being called for a network connection, the likely function is getaddrinfo or connect. 
-
-## Mapping Getaddrinfo API to Registers
-```
-getaddrinfo(hostname, port_or_service, hints, result)
-In x64 Windows calling convention those map to:
-    - RCX = hostname > xtrafftrck[.]net
-    - RDX = port/service string > points to "3000" as a string
- ```       
-At this point, I wanted to learn more about the C2 commands. Earlier in Ghidra, I found a function for C2 command dispatch and aptly renamed it to CommandDispatcher. A majority of the commands are encrypted and look to be decrypted at runtime, but a few were in plaintext. I've listed them below.
+I found a function for C2 command dispatch. A majority of the commands are encrypted and look to be decrypted at runtime, but a few were in plaintext. I've listed them below.
 
 | Tactic | Technique | Command |
 |--------|-----------|---------|
@@ -145,7 +112,51 @@ At this point, I wanted to learn more about the C2 commands. Earlier in Ghidra, 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="400">
 
-You can see the encrypted command named &DAT_2581afcc0 in the screenshot above. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
+In the above screenshot, you can see the encrypted command named &DAT_2581afcc0. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
+
+AgentThread Functionality
+1. WSAStartup
+2. DNS lookup for xtrafftrck[.]net
+3. TCP connection to port 3000
+4. WebSocket handshake
+5. C2 communication
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/fakenet-ng.png" alt="x64dbg reveals proper filename" width="800">
+
+# Dynamic Analysis
+
+It's time to have some fun and start playing with the malware in real time. Let's dive into executing the code in our test lab.
+
+## x64dbg - Dllinstall
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
+
+
+So far in our analysis, we've seen the exported function DllInstall appear a few times. Let's look into this function. 
+
+he first step is to calculate the RVA (Relative Virtual Address) for the DllInstall function and set a breakpoint. Or, as it turns out, I could have just looked at the symbols tab and set a breakpoint there. I landed on the DllInstall API call in x64dbg and proceeded to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
+
+# FakeNet-NG - Network Analysis
+
+Fakenet-NG is a tool that allows you to intercept and redirect all or specific network traffic while simulating legitimate network services. I used FakeNet-NG for dynamic network analysis. After renaming dr-dll.exe to runner.ocx, I execute the malware and notice the AgentThread started! The filename check passed and it ran it's initialization code.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain.png" alt="fakenet C2 activity" width="800">
+
+## x64dbg - ws2_32connect
+
+In an effort to get better at x64dbg and reverse engineering, I set off to find where in the malware the C2 and port were called in memory. To accomplish this task, I set a breakpoint on ws2_32connect in x64dbg. Once I landed on the breakpoint, I stepped through the code until I was able to find the C2 domain. VirusTotal confirms xtrafftrck[.]net is still live and malicious with 20/93 vendors flagging.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/port-reveal.png" alt="x64dbg reveals C2 port" width="800">
+
+I dumped RDX to memory to reveal 2 bytes with a value of 0xBB8 which translates to 3,000 or port 3000. When you see ws2_32.dll being called for a network connection, the likely function is getaddrinfo or connect. 
+
+## Mapping Getaddrinfo API to Registers
+```
+getaddrinfo(hostname, port_or_service, hints, result)
+In x64 Windows calling convention those map to:
+    - RCX = hostname > xtrafftrck[.]net
+    - RDX = port/service string > points to "3000" as a string
+ ```       
 
 A technique I am learning is calculating the relative virtual address. Below is my process for calculating RVA. We use the decryption function address and subtract it from the base address in Ghidra. The result is an offset that we will use to calculate the RVA in x64dbg.
 
@@ -204,9 +215,9 @@ While we were able to get the malware to respond to fake C2 python server, the s
 During debugging, I found the software dropped this file in AppData. It's not keylogger information. It's debugging information related to the malicious software C:\Users\userID\AppData\Local\Temp\lg.txt. I first thought this was the keylogger output, but it turned out to be debugging information from the malware.
 
 # Conclusion
-I must admit that this was quite the experience. Developing a C2 responder was the highlight of the investigation. There are many malware analysis avenues I did not pursue. Overtime, I'll look to build upon my report more thoroughly. For example, MITRE, Network IOCs, Floss & Capa findings as well the extent of the malware capability.
+I must admit that this was quite the experience. We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
 
-In part 2 of the series, I dive into threat intelligence. You can find the link [Part 2: Runner.ocx Mapping the Infrastructure](https://jryaniii.github.io/posts/runner-threat-intel/).
+In part 2 of the series, I dive into threat intelligence and aim to map out the malwares infrastructure. You can find the link [Part 2: Runner.ocx Mapping the Infrastructure](https://jryaniii.github.io/posts/runner-threat-intel/).
 
 ## IOCs
 
