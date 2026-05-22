@@ -109,9 +109,8 @@ Check out the results! Threat researcher `Lenny_3BO` has already submitted his o
 
 WebDav is a new concept I've come to learn in my analysis. Here's what Claude taught me.
 
-````
 WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients to read, write, and manage files on remote web servers. Legitimate use cases include SharePoint, remote file collaboration, and content management systems. Attackers love it for the same reason: it is a file transfer protocol hiding in plain sight, often permitted through firewalls that would block other staging mechanisms.
-````
+
 # Attack Chain
 
 During static analysis of runner.ocx, we identified an exported function named DllInstall containing the malware payload. Combining that with our threat intelligence, we can map out what the attack chain looks like in execution.
@@ -121,7 +120,8 @@ During static analysis of runner.ocx, we identified an exported function named D
 The victim is phished, usually via email. They download an attachment or follow a link within an email. That link brings them to the malicious clickfix website  (i.e, screenly[.]cam). On the clickfix website, the victim is presented with a message.
 
 ````
-"An error occurred verifying your browser. To fix this, press Windows + R, paste the code below, and press Enter."
+An error occurred verifying your browser. 
+To fix this, press Windows + R, paste the code below, and press Enter.
 ````
 
 The victim is requested to copy code which may be base64 encoded or plaintext like the example below. 
