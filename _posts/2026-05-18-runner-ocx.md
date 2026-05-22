@@ -59,7 +59,7 @@ Floss also reveals a few other malware capabilities.
 4. Clipboard Access
 5. Microphone recording
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block; margin-left:0;">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block !important; margin-left:0 !important;">
 
 We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could summize AgentThread won't start if the filename check does not pass.
 
@@ -67,7 +67,7 @@ We also come across what appears to be a conditional check. Dllinstall is refere
 
 Using Detect-it-Easy, we can determine if our malware is packed. By examining levels of entropy or randomness, we can determine whether the malware has been packed.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="400" style="display:block; margin-left:0;">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="400" style="display:block !important; margin-left:0 !important;">
 
 The results are in! The malware has low entropy and is thus not packed. Lucky us!
 
