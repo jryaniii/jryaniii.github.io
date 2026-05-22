@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Part 1: Runner.ocx Malware Analysis "
+title: "Part 1: Runner.ocx Malware Analysis"
 date: 2026-05-18
 categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
@@ -135,8 +135,10 @@ While we were able to get the malware to respond to fake C2 python server, the s
 
 During debugging, I found the software dropped this file in AppData. It's not keylogger information. It's debugging information related to the malicious software C:\Users\userID\AppData\Local\Temp\lg.txt. I first thought this was the keylogger output, but it turned out to be debugging information from the malware.
 
-# Outro
+# Conclusion
 I must admit that this was quite the experience. Developing a C2 responder was the highlight of the investigation. There are many malware analysis avenues I did not pursue. Overtime, I'll look to build upon my report more thoroughly. For example, MITRE, Network IOCs, Floss & Capa findings as well the extent of the malware capability.
+
+In part 2 of the series, I dive into threat intelligence. You can find the link [Part 2: Runner.ocx Threat Intelligence](https://jryaniii.github.io/posts/runner-threat-intel/).
 
 ## IOCs
 
@@ -164,7 +166,7 @@ I must admit that this was quite the experience. Developing a C2 responder was t
 
 ## References
 
-- [VirusTotal](https://www.virustotal.com/gui/file/SHA256)
+- [VirusTotal](https://www.virustotal.com)
 - [MalwareBazaar](https://bazaar.abuse.ch/)
 
 

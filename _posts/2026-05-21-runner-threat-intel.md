@@ -30,24 +30,26 @@ Here's what we discovered in our initial Virus Total analysis on the C2 domain.
 
 | Date Resolved | Detections | IP |
 |---------------|------------|----|
-| 2026-04-20 | 16/91 | `70.34.205.43` |
-| 2025-11-27 | 2/91 | `208.85.17.52` |
+| 2026-04-20 | 16/91 | `70.34.205[.]43` |
+| 2025-11-27 | 2/91 | `208.85.17[.]52` |
 
 ## Subdomains
 
 | Subdomain | Detections | IP |
 |-----------|------------|----|
-| `www.xtrafftrck[.]net` | 4/91 | `70.34.205.43` |
-| `xtrafftrck[.]net` | 20/91 | `70.34.205.43`, `208.85.17.52` |
+| `www.xtrafftrck[.]net` | 4/91 | `70.34.205[.]43` |
+| `xtrafftrck[.]net` | 20/91 | `70.34.205[.]43`, `208.85.17[.]52` |
 
 ## Virus Total - C2 IP Pivot
 The front page is painted red! With 16 out of 91 security vendors flagging the domain as malicious. Digging into the details tab, we find a public IP address associated with our malware's C2. 
 
-We've also uncovered interesting tags submitted by a community researcher. The researcher attributes `Chopi` as a campaign tag to the malware. We'll use this later in our threat intelligence research.
+We've also uncovered interesting tags assocaited with this IP. The tags were submitted by a community researcher named `JaffaCakes118`. The researcher attributes `Chopi` as a campaign tag. We'll look into this tag later in the report.
 
 Tags: `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware` 
 
-Searching on the new IP, 70.34.205[.]43, reveals a host of new information. We now have 4 new domains potentially. 
+Other tags associated with the C2 domain are Clickfix, ixwebsocket, ocx and WebDav. These tags reveal possible attack vector methodologies. Clickfix is a social engineering attack that tricks users into executing code on their computer. IXwebsocket notes the malware uses websocket in C2 communication. OCX relates to the malware's file type we analzed in the previous blog post. I'll touch on the WebDav tag in the attack chain analysis at the end of the report. So far, the tags have proven to be a great resource.
+
+Pivoting on 70.34.205[.]43 uncovers 4 additional domains, potentially linking to a broader campaign. 
 
 | Domain | Detections | First Seen | Pivot Method |
 |--------|------------|------------|--------------|
@@ -59,9 +61,9 @@ Searching on the new IP, 70.34.205[.]43, reveals a host of new information. We n
 ## Shodan.io
 
 Before diving into our newly discovered domains, let's lookup the IP 70.34.205[.]43 in Shodan. Shodan is search engine for the internet of everything. If it's online, it's in Shodan. After plugging in the IP, we're presented with two domains screenly[.]cam and vulltrusercontent[.]com.
-The later is a VPS hosting service. I provides the infrastructure for screenly[.]cam and xtraffck[.]net. 
+The later is a VPS hosting service. It provides the infrastructure for screenly[.]cam and xtraffck[.]net. 
 
-A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, has low indentification requirements and is commonly used by threat actors. It's most likely not worth pivoting into this domain. What does seem interesting is screenly, we've now seen this domain across two different tools.
+A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, has low identification requirements and is commonly used by threat actors. It's most likely not worth pivoting into this domain. What does seem interesting is screenly, we've now seen this domain across two different tools.
 
 ## Shodan.io Artifacts
 
@@ -75,38 +77,35 @@ A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, 
 | Port | Service | Banner / Notes |
 |------|---------|----------------|
 | `22` | SSH | `OpenSSH 9.6p1` |
-| `80` | HTTP | `nginx 1.24.0` — Ubuntu |
-| `443` | HTTPS | `nginx 1.24.0` — Ubuntu |
-| `3000` | Chopi Monitoring Dashboard | Operator C2 panel — Node.js Express |
+| `80` | HTTP | `nginx 1.24.0 — Ubuntu` |
+| `443` | HTTPS | `nginx 1.24.0 — Ubuntu` |
+| `3000` | Chopi Monitoring Dashboard | `Operator C2 panel — Node.js Express` |
 | `4000` | Unknown | `HTTP/1.1 400 Bad Request — Connection: close` |
 
 ## Screenly[.]cam 
-Shodan provided us with a wealth of information. We unveiled the open port 3000 which we now know uses a montoring software named `Chopi Monitoring Dashboard`. I believe this software is used for C2 management. The monitoring tool is named `Chopi` which ties back to a tag we saw in Virus Total submitted via the community researcher. Port 4000 is an interesting find. It's possible this port is expecting a specific  key, header or handshake for it to open as it states "Bad Request". Port 22 is standard with Vultr web hosting.
+Shodan provided a wealth of information. It revealed open port 3000, running a monitoring software named `Chopi Monitoring Dashboard`, which I believe is used for C2 management. The name Chopi ties back to the campaign tag identified by the community researcher on VirusTotal. Port 4000 is an interesting find, possibly expecting a specific key, header, or handshake before responding, as it currently returns a Bad Request error. Port 22 is standard for Vultr hosted infrastructure.
 
-The HTTPS certificate thumbprint is an interesting artifact Shodan provided. Let's see what this artifact reveals to us. We'll use a new tool called Censys to investigate the certificate.
+The HTTPS certificate thumbprint is an interesting artifact. Let's see what it reveals to us. We'll use another tool called Censys to investigate the certificate.
 
 ## Censys - Screenly HTTPs Certificate Thumbprint 
-Earlier in Virus Total, we saw several domains associated with the C2 IP address. Let's see if we can link activity between these domains in Censys. After inputting the HTTPS certificate thumbprint `f6be95351f72b24e1232c138f426aa612864696f`, what we find is nothing short of amazing. Our threat operator has resued the screenly[.]cam certificate for aurekh[.]com. A reused certificate confirms common operator ownership. If you recall from our VirusTotal table, aurekh[.]
-com was a domain assciated with our C2 IP address.
+Earlier in VirusTotal, we identified several domains associated with the C2 IP address. Inputting the HTTPS certificate thumbprint `f6be95351f72b24e1232c138f426aa612864696f` into Censys reveals a significant finding. The threat actor reused the screenly[.]cam certificate for aurekh[.]com, confirming shared operator ownership. As noted in our VirusTotal table, aurekh[.]com was already associated with our C2 IP address.
 
-I searched Censys for the other domains Virus Total provided but found no certificate reuse between them.
+I searched Censys for the other domains Virus Total provided but found no certificate reuse. between them.
 
 ## Virus Total - Screenly
-Let's go back to Virus Total and review screenly[.]cam. This time let's look at the community notes provided by `JaffaCakes118`. He references the tags seen below. Interesting, they look oddly similar to the tags we saw on our C2 domain earlier. 
+Let's go back to Virus Total and review screenly[.]cam. This time let's look at the community notes provided by `JaffaCakes118`. He references the tags seen below. They look oddly similar to the tags we saw on our C2 domain earlier.
 
 Tags: `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware`
 
 ## Google
 
-We've seen similar tags now between the two domains. Let's do an open search on Google on the `Chopi` campaign tag. Pivoting to Google, I lookup `malware chopi` and I'm presented with a link to Threatfox.
+We've seen similar tags now between our C2 domain and screenly[.]cam. Let's do a web search on Google for the `Chopi` campaign tag. Pivoting to Google, I lookup `malware chopi` and I'm presented with a link to Threatfox.
 
 <img src="/assets/images/posts/2026-05-21-runner-threat-intel/figure1-threatfox.png" alt="lg-debug" width="800">
 
 Check out the results! Threat researcher `Lenny_3BO` has already submitted his own findings for the `Chopi` malware campaign. Comparing his submissions against our malware sample reveals overlapping malicious domains and IPs. Very cool!
 
 ## Attack Chain
-
-Other tags we saw are ClickFix and WebDav. Both of these tags are revealing. Clickfix is a type of social engineering attack where a hacker persuades an unsuspecting end user to execute code on their computer. Often times the hacker will disguise the request as a captcha. 
 
 WebDav is a new concept I've come to learn in my analysis. The attack chain typically starts with a phishing email carrying a URL file or an LNK. When executed, Windows silently mounts the remote WebDAV share and the payload is loaded directly into memory, bypassing the local filesystem entirely. No file write, no Mark of the Web (MotW), no SmartScreen prompt. That last part is the real win for the attacker.
 
@@ -128,7 +127,8 @@ AgentThread beacons to xtrafftrck[.]net:3000/ws/agent
 Operator manages victims via Chopi Monitoring Dashboard
 ```
 
-## Outro
+## Conclusion
+During our threat intelligence campaign, we used various web tools to bring together disparate artifacts. Togther hey map out the attackers infrastructure, attack patterns and Opsec strengths and weaknesses. Small mistakes in operator security, like certificate reuse and consistent infrastructure patterns, are what ultimately expose a threat actor's full campaign.
 
 ## References
 
@@ -137,3 +137,6 @@ Operator manages victims via Chopi Monitoring Dashboard
 - [Censys](https://search.censys.com)
 - [Shodan.io](https://shodan.io)
 
+---
+
+Analysis performed: 2026-05-21 | Analyst: John Ryan
