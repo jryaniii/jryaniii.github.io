@@ -5,28 +5,76 @@ date: 2026-05-18
 categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 ---
-## Intro
+## Introduction
 During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pretty heavily. But, I feel if I keep at that approach eventually it will click. No one knows everything all at once. I was hesitant to take on Ghidra because the depth is so vast, but while I was plugging away I found the process quite enjoyable. 
 
-## IOC Summary
+Our workflow will look something like this:
+
+1. `Static Analysis` using Capa, Floss, DIE, PEStats, Ghidra
+2. `Dynamic Analysis` using x64dbg, FakeNet-NG, Custom Python C2
+
+# Static Analysis
 
 | Field         | Value |
 |---------------|-------|
 | File Name     | `runner.ocx` |
 | SHA256        | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
-| C2 Domain | `xtrafftrck[.]net` |
 
+## Capa - Capability Mapping
+Capa is an open-source tool created by Mandiant's FLARE team that detects capabilities in executable files. Initial analysis confirms the following: 
 
----
+1. Confirmed XOR encoding, RC4, and AES capabilities.
+2. Confirmed full active directory enumeration capability.
+3. Proxy enumeration
+4. Privilege escalation
+5. Credential harvesting
+6. Lateral movement and network enumeration.
 
-## Ghidra Static Analysis
+<img src="/assets/images/posts/2026-05-18-runner-ocx/capa-analysis-loading.png" alt="capa-analysis-loading" width="800">
+
+## Floss - String Analysis
+Floss uses advanced static analysis techniques to automatically extract and deobfuscate all strings from malware binaries. Using floss, we uncover a C2 configuration  intriguing strings.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-analysis-loading.png" alt="floss-analysis-loading" width="800">
+
+- DllInstall: Koki=
+- Koki cmd=[
+- regsvr32 /s /i "
+- regsvr32 /s "
+
+We could put these strings together to form a command. 
+
+```
+regsvr32 /s /i koki=[],dllinstall
+```
+
+Floss also reveals a few other malware capabilities.
+1. Schedule Task - create, run, delete
+2. Registry Manipulation - create, set, delete, query
+3. SMB lateral movement via NTLM
+4. Clipboard Access
+5. Microphone recording
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="800">
+
+We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later.
+
+## DIE - Detect it Easy
+
+Using Detect-it-Easy, we can determine if our malware is using a packer. By examining levels of entropy or randomness, we can determine whether the malware has been packed.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="800">
+
+The results are in! The malware has low entropy and is thus not packed. Lucky us!
+
+## Ghidra - Static Code Analysis
 AI was really interested in the TLS portion in the beginning. It thought the malware C2 configuration was linked there. Eventually, it wound up being a dead end and we pivoted to the exported function DllInstall. I walked through the pseudo C code and found the malware required a few conditional checks to pass before running properly. The main check was the filename. Now, in hindsight a simple VirusTotal lookup would have told me the filename, but I chose the hard way and decided to debug the program. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
 
-The first step was to calculate the RVA for the DLLInstall function and set a breakpoint. Or, as it turns out, I could have just looked at symbols and set a breakpoint there. Never blindly follow AI. I landed on the DllInstall API call in x64dbg and proceeded to step through the code. 
+The first step was to calculate the RVA (Relative Virtual Address) for the DLLInstall function and set a breakpoint. Or, as it turns out, I could have just looked at the symbols tab and set a breakpoint there. I landed on the DllInstall API call in x64dbg and proceeded to step through the code. Alas, I found the required filename "runner.ocx." 
 
-Alas, I found the required filename "runner.ocx." I should mention that if the malware was not correctly named the AgentThread function FUN_257ea2af0 would not start. This means the following would not occur:
+I should mention that if the malware was not correctly named the AgentThread function FUN_257ea2af0 would not start. This means the following would not occur:
 
 ## AgentThread Functionality
 ```
@@ -56,7 +104,6 @@ In x64 Windows calling convention those map to:
     - RDX = port/service string > points to "3000" as a string
  ```       
 At this point, I wanted to learn more about the C2 commands. Earlier in Ghidra, I found a function for C2 command dispatch and aptly renamed it to CommandDispatcher. A majority of the commands are encrypted and look to be decrypted at runtime, but a few were in plaintext. I've listed them below.
-## Plaintext C2 Commands and Tactics
 
 | Tactic | Technique | Command |
 |--------|-----------|---------|
