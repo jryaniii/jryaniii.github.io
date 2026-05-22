@@ -121,7 +121,7 @@ AgentThread Functionality
 4. WebSocket handshake
 5. C2 communication
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/fakenet-ng.png" alt="x64dbg reveals proper filename" width="800">
+
 
 # Dynamic Analysis
 
@@ -134,13 +134,25 @@ It's time to have some fun and start playing with the malware in real time. Let'
 
 So far in our analysis, we've seen the exported function DllInstall appear a few times. Let's look into this function. 
 
-he first step is to calculate the RVA (Relative Virtual Address) for the DllInstall function and set a breakpoint. Or, as it turns out, I could have just looked at the symbols tab and set a breakpoint there. I landed on the DllInstall API call in x64dbg and proceeded to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
+Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and run the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain.png" alt="C2 Domain" width="800">
+
 
 # FakeNet-NG - Network Analysis
 
 Fakenet-NG is a tool that allows you to intercept and redirect all or specific network traffic while simulating legitimate network services. I used FakeNet-NG for dynamic network analysis. After renaming dr-dll.exe to runner.ocx, I execute the malware and notice the AgentThread started! The filename check passed and it ran it's initialization code.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain.png" alt="fakenet C2 activity" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/fakenet-ng.png" alt="fakenet-ng" width="800">
+
+Note that earlier in our analysis, we found that the DllInstall export API contained a filename check. The check is required to pass in order to execute AgentThread. Further analysis in Ghidra revealed to us AgentThread's purpose.
+
+AgentThread Functionality
+1. WSAStartup
+2. DNS lookup for xtrafftrck[.]net
+3. TCP connection to port 3000
+4. WebSocket handshake
+5. C2 communication
 
 ## x64dbg - ws2_32connect
 
