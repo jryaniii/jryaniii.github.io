@@ -123,6 +123,7 @@ The victim is phished, usually via email. They download an attachment or follow 
 ````
 "An error occurred verifying your browser. To fix this, press Windows + R, paste the code below, and press Enter."
 ````
+
 The victim is requested to copy code which may be base64 encoded or plaintext like the example below. 
 
 ````
@@ -146,6 +147,7 @@ Here's what happens.
 
 5. The implant is now executing in memory.
 ````
+
 ## Command and Control
 
 Now that the malware has executed, the C2 is called and the operator controls the victim's computer.
