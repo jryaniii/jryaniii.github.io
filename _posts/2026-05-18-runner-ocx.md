@@ -138,7 +138,7 @@ During debugging, I found the software dropped this file in AppData. It's not ke
 # Conclusion
 I must admit that this was quite the experience. Developing a C2 responder was the highlight of the investigation. There are many malware analysis avenues I did not pursue. Overtime, I'll look to build upon my report more thoroughly. For example, MITRE, Network IOCs, Floss & Capa findings as well the extent of the malware capability.
 
-In part 2 of the series, I dive into threat intelligence. You can find the link [Part 2: Runner.ocx Threat Intelligence](https://jryaniii.github.io/posts/runner-threat-intel/).
+In part 2 of the series, I dive into threat intelligence. You can find the link [Part 2: Runner.ocx Mapping the Infrastructure](https://jryaniii.github.io/posts/runner-threat-intel/).
 
 ## IOCs
 
@@ -154,15 +154,6 @@ In part 2 of the series, I dive into threat intelligence. You can find the link 
 | C2 Protocol | `Web Socket (ws:// and wss://)` |
 
 ---
-
-# Threat Intelligence
-| Domain | Detections | First Seen | Assessment |
-|--------|------------|------------|------------|
-| `paysolutions.ink` | 19/91 | 2026-04-28 | High confidence related — high detections, same IP, same timeframe as `xtrafftrck.net` |
-| `screenly.cam` | 18/91 | 2026-04-01 | High confidence related — `.cam` not `.com`, likely typosquatting `screenly.com` |
-| `xtrafftrck.net` | 20/91 | 2026-04-20 | Sample C2 domain |
-| `ahdaratlegalservices.com` | 18/91 | 2026-03-18 | High detections — worth investigating |
-| `aurekh.com` | 16/91 | 2026-03-18 | High detections — worth investigating |
 
 ## References
 

