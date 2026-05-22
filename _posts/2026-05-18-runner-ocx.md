@@ -91,11 +91,11 @@ During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pr
 
 AI was really interested in the TLS portion in the beginning. It thought the malware C2 configuration was linked there. Eventually, it wound up being a dead end and we pivoted to the exported function DllInstall. I walked through the pseudo C code and found the malware required a few conditional checks to pass before running properly. The main check was the filename. Now, in hindsight a simple VirusTotal lookup would have told me the filename, but I chose the hard way and decided to debug the program. 
 
-I found a function for C2 command dispatch. A majority of the commands are encrypted and look to be decrypted at runtime, but a few were in plaintext. I've listed them below.
+While walking through the functions in Ghidra, I found a function for used for C2 communication. The function looks to be related to command dispatch. Jumping into the function reveals a host of encrypted commands and functions related to the C2 operation. While a majority of the commands are encrypted and look to be decrypted at runtime, but a few were in plaintext. I've listed them below.
 
 | Tactic | Technique | Command |
 |--------|-----------|---------|
-| `Privilege Escalation / Def. Evasion` | `T1134 - Access Token Manipulation` | `token_run` |
+| `Privilege Escalation` | `T1134 - Access Token Manipulation` | `token_run` |
 | `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_start` |
 | `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_stop` |
 | `Credential Access` | `T1185 - Browser Session Hijacking` | `cdp_send` |
