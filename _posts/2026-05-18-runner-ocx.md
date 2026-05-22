@@ -6,9 +6,7 @@ categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 ---
 ## Introduction
-During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pretty heavily. But, I feel if I keep at that approach eventually it will click. No one knows everything all at once. I was hesitant to take on Ghidra because the depth is so vast, but while I was plugging away I found the process quite enjoyable. 
-
-Our workflow will look something like this:
+In this analysis, we dive deep into C2 malware. Our workflow will look something like this:
 
 1. `Static Analysis` using Capa, Floss, DIE, PEStats, Ghidra
 2. `Dynamic Analysis` using x64dbg, FakeNet-NG, Custom Python C2
@@ -21,7 +19,11 @@ Our workflow will look something like this:
 | SHA256        | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
 
 ## Capa - Capability Mapping
-Capa is an open-source tool created by Mandiant's FLARE team that detects capabilities in executable files. Initial analysis confirms the following: 
+Capa is an open-source tool created by Mandiant's FLARE team that detects capabilities in executable files. 
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/capa-analysis-loading.png" alt="capa-analysis-loading" width="800">
+
+Initial analysis confirms the following: 
 
 1. Confirmed XOR encoding, RC4, and AES capabilities.
 2. Confirmed full active directory enumeration capability.
@@ -30,12 +32,14 @@ Capa is an open-source tool created by Mandiant's FLARE team that detects capabi
 5. Credential harvesting
 6. Lateral movement and network enumeration.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/capa-analysis-loading.png" alt="capa-analysis-loading" width="800">
+
 
 ## Floss - String Analysis
-Floss uses advanced static analysis techniques to automatically extract and deobfuscate all strings from malware binaries. Using floss, we uncover a C2 configuration  intriguing strings.
+Floss uses advanced static analysis techniques to automatically extract and deobfuscate all strings from malware binaries. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/floss-analysis-loading.png" alt="floss-analysis-loading" width="800">
+
+Using floss, we uncover a C2 configuration  intriguing strings.
 
 - DllInstall: Koki=
 - Koki cmd=[
@@ -55,19 +59,22 @@ Floss also reveals a few other malware capabilities.
 4. Clipboard Access
 5. Microphone recording
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400">
 
 We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later.
 
 ## DIE - Detect it Easy
 
-Using Detect-it-Easy, we can determine if our malware is using a packer. By examining levels of entropy or randomness, we can determine whether the malware has been packed.
+Using Detect-it-Easy, we can determine if our malware is packed. By examining levels of entropy or randomness, we can determine whether the malware has been packed.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="400">
 
 The results are in! The malware has low entropy and is thus not packed. Lucky us!
 
 ## Ghidra - Static Code Analysis
+
+During this analysis, I took my first dive into Ghidra. Honestly, AI assisted pretty heavily. But, I feel if I keep at that approach eventually it will click. No one knows everything all at once. I was hesitant to take on Ghidra because the depth is so vast, but while I was plugging away I found the process quite enjoyable.
+
 AI was really interested in the TLS portion in the beginning. It thought the malware C2 configuration was linked there. Eventually, it wound up being a dead end and we pivoted to the exported function DllInstall. I walked through the pseudo C code and found the malware required a few conditional checks to pass before running properly. The main check was the filename. Now, in hindsight a simple VirusTotal lookup would have told me the filename, but I chose the hard way and decided to debug the program. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
