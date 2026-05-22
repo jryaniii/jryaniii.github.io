@@ -121,10 +121,9 @@ It's time to have some fun and start playing with the malware in real time. Let'
 
 ## x64dbg - Dllinstall
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
-
-
 So far in our analysis, we've seen the exported function DllInstall appear a few times. Let's look into this function. 
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
 
 Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and run the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
 
@@ -165,7 +164,9 @@ In x64 Windows calling convention those map to:
 
 
 # Calculating Relative Virtual Address (RVA)
-A technique I am learning is calculating the relative virtual address. Below is my process for calculating RVA. We use the decryption function address and subtract it from the base address in Ghidra. The result is an offset that we will use to calculate the RVA in x64dbg.
+We noted in Ghidra that we suspect the command dispatch function decrypts it's windows commands during runtime. To test this theory, we need to set a breakpoint in x64dbg on the decryption function 25819fE10. However, Ghidra addresses do not directly translate to runtime addresses in x64dbg, especially if ASLR is enabled. We'll need the relative virtual address in x64dbg to set a proper breakpoint.
+
+A technique I am learning is how to calculate the relative virtual address. Below is my process for calculating RVA. We use the decryption function address and subtract it from the base address in Ghidra. The result is an offset that we will use to calculate the RVA in x64dbg.
 
 In x64dbg, we load up our malware and open memory map. We locate runner.ocx and note the image base. We then add the Ghidra offset + x64dbg image base address. The result is the RVA of the decryption function. 
  
@@ -205,7 +206,9 @@ runner.ocx image base + Ghidra offset = RVA
 
 Unfortunately, setting the breakpoint wasn't the answer. Dynamic debugging revealed to us that the commands were decrypted only when specifically called on from the C2 server.
 
-The next idea was to create a C2 responder in Python. I originally used FakeNet-NG to get the malware to make a connection, but the malware required a response from the C2 to decrypt the commands. The command only decrypted at runtime when specifically called.
+## Python Custom C2 
+
+The next idea is to create a C2 responder in Python. I originally used FakeNet-NG to get the malware to make a connection, but the malware required a response from the C2 to decrypt the commands. The command only decrypted at runtime when specifically called. Perhaps we can intercept the decryption using a custom C2 python responder.
 
 I created a responder python script for the C2 domain on port 3000. This is very cool as we're able to interact with the malicious executable as if we were the C2 server! To get this to work properly, I had to edit the windows host file C:\windows\system32\drivers\etc\hosts and add 127.0.0.1 xtrafftrck[.]net.
 
