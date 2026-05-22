@@ -110,18 +110,10 @@ While walking through the functions in Ghidra, I found a function for used for C
 | `Lateral Movement` | `T1550.002 - Pass the Hash` | `remote_logon` |
 | `Discovery` | `T1033 - System Owner/User Discovery` | `whoami` |
 
+
 <img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="400">
 
 In the above screenshot, you can see the encrypted command named &DAT_2581afcc0. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
-
-AgentThread Functionality
-1. WSAStartup
-2. DNS lookup for xtrafftrck[.]net
-3. TCP connection to port 3000
-4. WebSocket handshake
-5. C2 communication
-
-
 
 # Dynamic Analysis
 
