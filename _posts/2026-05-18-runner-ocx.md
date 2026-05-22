@@ -128,8 +128,6 @@ So far in our analysis, we've seen the exported function DllInstall appear a few
 
 Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and run the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain.png" alt="C2 Domain" width="800">
-
 
 # FakeNet-NG - Network Analysis
 
@@ -150,11 +148,14 @@ AgentThread Functionality
 
 In an effort to get better at x64dbg and reverse engineering, I set off to find where in the malware the C2 and port were called in memory. To accomplish this task, I set a breakpoint on ws2_32connect in x64dbg. Once I landed on the breakpoint, I stepped through the code until I was able to find the C2 domain. VirusTotal confirms xtrafftrck[.]net is still live and malicious with 20/93 vendors flagging.
 
+<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain.png" alt="C2 Domain" width="800">
+
+So we have the domain, now let's find the port number it uses to dial out. I dump RDX to memory to reveal two bytes with a value of 0xBB8 which translates to 3,000 or port 3000. 
+
 <img src="/assets/images/posts/2026-05-18-runner-ocx/port-reveal.png" alt="x64dbg reveals C2 port" width="800">
 
-I dumped RDX to memory to reveal 2 bytes with a value of 0xBB8 which translates to 3,000 or port 3000. When you see ws2_32.dll being called for a network connection, the likely function is getaddrinfo or connect. 
+When you see ws2_32.dll being called for a network connection, the likely function is getaddrinfo or connect. The code snippet below maps the function inputs to windows registers. 
 
-## Mapping Getaddrinfo API to Registers
 ```
 getaddrinfo(hostname, port_or_service, hints, result)
 In x64 Windows calling convention those map to:
@@ -162,11 +163,13 @@ In x64 Windows calling convention those map to:
     - RDX = port/service string > points to "3000" as a string
  ```       
 
+
+# Calculating Relative Virtual Address (RVA)
 A technique I am learning is calculating the relative virtual address. Below is my process for calculating RVA. We use the decryption function address and subtract it from the base address in Ghidra. The result is an offset that we will use to calculate the RVA in x64dbg.
 
 In x64dbg, we load up our malware and open memory map. We locate runner.ocx and note the image base. We then add the Ghidra offset + x64dbg image base address. The result is the RVA of the decryption function. 
  
-# Calculating RVA (Ghidra + x64dbg)
+## Ghidra + x64dbg Image Base
 The decryption function FUN_25819fe10 is called before every command executes in the CommandDispatch function.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/ghidra-imagebase.png" alt="ghidra imagebase" width="400">
