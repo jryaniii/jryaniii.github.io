@@ -210,19 +210,78 @@ Unfortunately, setting the breakpoint wasn't the answer. Dynamic debugging revea
 
 The next idea is to create a C2 responder in Python. I originally used FakeNet-NG to get the malware to make a connection, but the malware required a response from the C2 to decrypt the commands. The command only decrypted at runtime when specifically called. Perhaps we can intercept the decryption using a custom C2 python responder.
 
-I created a responder python script for the C2 domain on port 3000. This is very cool as we're able to interact with the malicious executable as if we were the C2 server! To get this to work properly, I had to edit the windows host file C:\windows\system32\drivers\etc\hosts and add 127.0.0.1 xtrafftrck[.]net.
+I created a responder python script for the C2 domain listening on port 3000. This is very cool as we're able to interact with the malicious executable as if we were the C2 server! To get this to work properly, I had to edit the windows host file C:\windows\system32\drivers\etc\hosts and add 127.0.0.1 xtrafftrck[.]net.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/python-script.png" alt="python-script" width="800">
+
+## Interacting with the Malware via Custom C2 Responder
+
+With the hosts file redirecting, I fired up a custom Python WebSocket server to simulate the `Chopi` C2 dashboard. The malware connected on `/ws/agent` exactly as the FLOSS strings predicted.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/c2-success-2.png" alt="c2-success-" width="800">
+
+Sending commands confirmed the C2 protocol uses JSON with a `type` field. The malware responds with a matching `<command>_result` type. Three commands returned live responses.
+
+`chrome_extract` returned:
+```json
+{"data":{"error":"OCX not found. Upload first."},"type":"chrome_result"}
+```
+
+The Chrome credential extraction requires `chromelevator.ocx` to be uploaded to the victim machine first via a `chrome_upload` command before extraction can proceed. This confirms the two stage Chrome harvesting workflow identified during static analysis.
+
+`wpad_start` returned:
+```json
+{"data":{"error":"WPAD OCX not found. curl may have failed."},"type":"wpad_result"}
+```
+
+The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must be staged on the victim machine before the operator can activate WPAD based NTLM credential capture.
+
+`cdp_start` produced the another interesting result. Microsoft Edge launched on my machine before returning:
+```json
+{"data":{"error":"Chrome exited immediately with code 0. Path: C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe","success":false},"type":"cdp_start_result"}
+```
+
+`net_enumerate` produced the best response yet. The command enumerated my entire network. Wow!
+
+```json
+{"data":{"hosts":[{"domain":"WORKGROUP","fqdn":"JohnDesktop","hostname":"JOHNDESKTOP","ip":"10.0.0.1","mac":"08:00:27:a7:24:14","os":"","ports":[135,139,445,3389],"source":"enumerate"},{"domain":"","fqdn":"DESKTOP-VT730LL","hostname":"","ip":"10.0.0.2","mac":"08:00:ff:88:7b","os":"","ports":[135,139,445],"source":"enumerate"}]}}
+```
+It went through 4 phases of scanning. `arp` to discover additional hosts, `netbios` name resolution, `scanning` port scanning and `smb` enumeration. 
+
+
+These responses confirm that operator tasking happens exclusively over the WebSocket connection using JSON commands.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/python-c2-script.png" alt="python-c2-script" width="800">
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/c2-domain-response.png" alt="c2-domain-response" width="800">
-    
-Above you can see the python script in action. It took some time to get here but I finally got a C2 RECV response. The C2 server expected "type" as a field for the command. Without proper field name, the malware would not respond. It took a lot of trial and error. This screenshot makes it look easy.
+## x64dbg - lg.txt 
 
-While we were able to get the malware to respond to fake C2 python server, the syntax wasn't quite there. You can see in the screenshot it replied with an error. At this point, I decided to stop tinkering and gave up on achieving the proper syntax. In the end, we created a working C2 responder that triggered a real response from the malware. Very cool.
+During debugging, I came across an interesting file path in the stack.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-debug.png" alt="lg-debug" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="800">
 
-During debugging, I found the software dropped this file in AppData. It's not keylogger information. It's debugging information related to the malicious software C:\Users\userID\AppData\Local\Temp\lg.txt. I first thought this was the keylogger output, but it turned out to be debugging information from the malware.
+Let's examine the file C:\Users\johnrAppData\Local\Temp\lg.txt.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-goldmine.png" alt="lg-goldmine" width="800">
+
+Investigating the file reveals a goldmine of information. We can see strings similar to the ones Floss had provided to us during static analysis.
+
+1. Koki cmd=[
+2. AgentThread
+3. DllInstall
+
+Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `Blat` parameters pass the check, `Agentthread` is started. 
+
+What's more is we can see the C2 domain is contacted via `AgentThread` and is sending our `hostname`, `userID` and `local IP address`. This file is used as a debugging log for the malware. The lg.txt file discovery has confirmed a few hypothesis's we established early on in our analysis. AgentThread is the C2 domain connection process. DllInstall is our malware entry point and Koki=[ is our command parameter check.
+
+## Koki Check
+
+The `Koki` cmd contains the full command line used to invoke the malware. The `tail` parameter extracts just the filename from that command line, in this case runner.ocx. 
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/koki-string-search.png" alt="koki-string-search" width="800">
+
+Let's find the Koki check in x64dbg. I set a breakpoint on DllInstall and searching the current module for string `koki`. 
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
 
 # Conclusion
 I must admit that this was quite the experience. We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
