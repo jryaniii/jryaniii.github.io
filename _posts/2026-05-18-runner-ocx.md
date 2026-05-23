@@ -56,7 +56,13 @@ FLOSS also reveals a few other malware capabilities.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block !important; margin-left:0 !important;">
 
-We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could surmise AgentThread won't start if the filename check does not pass.
+Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could surmise AgentThread won't start if the filename check does not pass. We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. 
+
+Two more strings stand out. 
+- chromelevator.ocx
+- wpad_capture.ocx
+
+We'll come to find these two `ocx` files are dropped payloads during post-exploitation.
 
 ## DIE - Detect it Easy
 
@@ -121,7 +127,7 @@ So far in our analysis, we've seen the exported function DllInstall appear a few
 Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and run the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
 
 
-# FakeNet-NG - Network Analysis
+# FakeNet - Network Analysis
 
 Fakenet-NG is a tool that allows you to intercept and redirect all or specific network traffic while simulating legitimate network services. I used FakeNet-NG for dynamic network analysis. After renaming dr-dll.exe to runner.ocx, I execute the malware and notice the AgentThread started! The filename check passed and it ran it's initialization code.
 
@@ -229,7 +235,7 @@ The Chrome credential extraction requires `chromelevator.ocx` to be uploaded to 
 
 The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must be staged on the victim machine before the operator can activate WPAD based NTLM credential capture.
 
-`cdp_start` produced an another interesting result. Microsoft Edge launched on my machine before returning:
+`cdp_start` produced another interesting result. Microsoft Edge launched on my machine before returning:
 ```json
 {"data":{"error":"Chrome exited immediately with code 0. Path: C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe","success":false},"type":"cdp_start_result"}
 ```
@@ -276,7 +282,7 @@ Setting a breakpoint on `DllInstall` and searching the current module for string
 # Conclusion
  The combination of WebSocket-based C2, credential extraction capabilities, and remote execution functionality indicates this malware is intended for post-compromise operations. Its design suggests use as a lightweight backdoor for maintaining access and facilitating lateral movement within a compromised environment. We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
 
-In part 2 of the series, I dive into threat intelligence and aim to map out the malwares infrastructure. You can find the link [Part 2: Runner.ocx Mapping the Infrastructure](https://jryaniii.github.io/posts/runner-threat-intel/).
+In part 2 of the series, I dive into threat intelligence and aim to map out the malwares infrastructure. You can find the link [Part 2: From Malware to Infrastructure](https://jryaniii.github.io/posts/runner-threat-intel/).
 
 ## IOCs
 
