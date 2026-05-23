@@ -34,17 +34,18 @@ Initial analysis confirms the following:
 
 
 
-## Floss - String Analysis
-Floss uses advanced static analysis techniques to automatically extract and deobfuscate all strings from malware binaries. 
+## FLOSS - String Analysis
+FLOSS uses advanced static analysis techniques to automatically extract and deobfuscate all strings from malware binaries. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/floss-analysis-loading.png" alt="floss-analysis-loading" width="800" style="display:block; margin-left:0;">
 
-Using floss, we uncover some intriguing strings.
+Using FLOSS, we uncover some intriguing strings.
 
 - DllInstall: Koki=
 - Koki cmd=[
 - regsvr32 /s /i "
 - regsvr32 /s "
+- AgentThread
 
 We could put these strings together to form a command. 
 
@@ -52,7 +53,7 @@ We could put these strings together to form a command.
 regsvr32 /s /i koki=[],dllinstall
 ```
 
-Floss also reveals a few other malware capabilities.
+FLOSS also reveals a few other malware capabilities.
 1. Schedule Task - create, run, delete
 2. Registry Manipulation - create, set, delete, query
 3. SMB lateral movement via NTLM
@@ -212,7 +213,7 @@ The next idea is to create a C2 responder in Python. I originally used FakeNet-N
 
 I created a responder python script for the C2 domain listening on port 3000. This is very cool as we're able to interact with the malicious executable as if we were the C2 server! To get this to work properly, I had to edit the windows host file C:\windows\system32\drivers\etc\hosts and add 127.0.0.1 xtrafftrck[.]net.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/python-script.png" alt="python-script" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/python-script.png" alt="python-script" width="400">
 
 ## Interacting with the Malware via Custom C2 Responder
 
@@ -236,7 +237,7 @@ The Chrome credential extraction requires `chromelevator.ocx` to be uploaded to 
 
 The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must be staged on the victim machine before the operator can activate WPAD based NTLM credential capture.
 
-`cdp_start` produced the another interesting result. Microsoft Edge launched on my machine before returning:
+`cdp_start` produced an another interesting result. Microsoft Edge launched on my machine before returning:
 ```json
 {"data":{"error":"Chrome exited immediately with code 0. Path: C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe","success":false},"type":"cdp_start_result"}
 ```
@@ -251,19 +252,17 @@ It went through 4 phases of scanning. `arp` to discover additional hosts, `netbi
 
 These responses confirm that operator tasking happens exclusively over the WebSocket connection using JSON commands.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/python-c2-script.png" alt="python-c2-script" width="800">
-
 ## x64dbg - lg.txt 
 
 During debugging, I came across an interesting file path in the stack.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="400">
 
 Let's examine the file C:\Users\johnrAppData\Local\Temp\lg.txt.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/lg-goldmine.png" alt="lg-goldmine" width="800">
 
-Investigating the file reveals a goldmine of information. We can see strings similar to the ones Floss had provided to us during static analysis.
+Investigating the file reveals a goldmine of information. We can see strings similar to the ones FLOSS had provided to us during static analysis.
 
 1. Koki cmd=[
 2. AgentThread
@@ -279,7 +278,7 @@ The `Koki` cmd contains the full command line used to invoke the malware. The `t
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/koki-string-search.png" alt="koki-string-search" width="800">
 
-Let's find the Koki check in x64dbg. I set a breakpoint on DllInstall and searching the current module for string `koki`. 
+Setting a breakpoint on `DllInstall` and searching the current module for string `koki`. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
 
