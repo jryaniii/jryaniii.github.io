@@ -6,7 +6,7 @@ categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 ---
 ## Introduction
-In this analysis, we dive deep into C2 malware. Our workflow will look something like this:
+In this analysis, we dive deep into Aa full featured RAT with credential harvesting and lateral movement capability. Our workflow will look something like this:
 
 1. `Static Analysis` using Capa, Floss, DIE, PEStats, Ghidra
 2. `Dynamic Analysis` using x64dbg, FakeNet-NG, Custom Python C2
@@ -47,22 +47,16 @@ Using FLOSS, we uncover some intriguing strings.
 - regsvr32 /s "
 - AgentThread
 
-We could put these strings together to form a command. 
-
-```
-regsvr32 /s /i koki=[],dllinstall
-```
-
 FLOSS also reveals a few other malware capabilities.
-1. Schedule Task - create, run, delete
-2. Registry Manipulation - create, set, delete, query
-3. SMB lateral movement via NTLM
-4. Clipboard Access
-5. Microphone recording
+- Schedule Task - create, run, delete
+- Registry Manipulation - create, set, delete, query
+- SMB lateral movement via NTLM
+- Clipboard Access
+- Microphone recording
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block !important; margin-left:0 !important;">
 
-We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could summize AgentThread won't start if the filename check does not pass.
+We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could surmise AgentThread won't start if the filename check does not pass.
 
 ## DIE - Detect it Easy
 
@@ -109,8 +103,6 @@ While walking through the functions in Ghidra, I found a function for used for C
 | `Lateral Movement / Execution` | `T1021.002 - SMB/Windows Admin Shares` | `cred_exec` |
 | `Discovery` | `T1018 - Remote System Discovery` | `net_enumerate` |
 | `Lateral Movement` | `T1550.002 - Pass the Hash` | `remote_logon` |
-| `Discovery` | `T1033 - System Owner/User Discovery` | `whoami` |
-
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="400">
 
@@ -247,8 +239,7 @@ The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must 
 ```json
 {"data":{"hosts":[{"domain":"WORKGROUP","fqdn":"JohnDesktop","hostname":"JOHNDESKTOP","ip":"10.0.0.1","mac":"08:00:27:a7:24:14","os":"","ports":[135,139,445,3389],"source":"enumerate"},{"domain":"","fqdn":"DESKTOP-VT730LL","hostname":"","ip":"10.0.0.2","mac":"08:00:ff:88:7b","os":"","ports":[135,139,445],"source":"enumerate"}]}}
 ```
-It went through 4 phases of scanning. `arp` to discover additional hosts, `netbios` name resolution, `scanning` port scanning and `smb` enumeration. 
-
+It went through 4 phases of scanning. `arp` to discover additional hosts, `netbios` name resolution, `scanning` port scanning and `smb` enumeration. We also received hostnames, MAC addresses, IP addresses, open ports, workgroup membership, and RDP exposure. This serves as foundational data for a threat actor.
 
 These responses confirm that operator tasking happens exclusively over the WebSocket connection using JSON commands.
 
@@ -258,7 +249,7 @@ During debugging, I came across an interesting file path in the stack.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="400">
 
-Let's examine the file C:\Users\johnrAppData\Local\Temp\lg.txt.
+Let's examine `C:\Users\johnrAppData\Local\Temp\lg.txt`.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/lg-goldmine.png" alt="lg-goldmine" width="800">
 
@@ -270,7 +261,7 @@ Investigating the file reveals a goldmine of information. We can see strings sim
 
 Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `Blat` parameters pass the check, `Agentthread` is started. 
 
-What's more is we can see the C2 domain is contacted via `AgentThread` and is sending our `hostname`, `userID` and `local IP address`. This file is used as a debugging log for the malware. The lg.txt file discovery has confirmed a few hypothesis's we established early on in our analysis. AgentThread is the C2 domain connection process. DllInstall is our malware entry point and Koki=[ is our command parameter check.
+What's more is we can see the C2 domain is contacted via `AgentThread` and is sending our `hostname`, `userID` and `local IP address`. The files purpose is to aide in threat actor in debugging the malware. The lg.txt file discovery has confirmed a few hypothesis's we established early on in our analysis. AgentThread is the C2 domain connection process. DllInstall is our malware entry point and Koki=[ is our command parameter check.
 
 ## Koki Check
 
@@ -283,22 +274,35 @@ Setting a breakpoint on `DllInstall` and searching the current module for string
 <img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
 
 # Conclusion
-I must admit that this was quite the experience. We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
+ We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
 
 In part 2 of the series, I dive into threat intelligence and aim to map out the malwares infrastructure. You can find the link [Part 2: Runner.ocx Mapping the Infrastructure](https://jryaniii.github.io/posts/runner-threat-intel/).
 
 ## IOCs
 
-| Field         | Value |
-|---------------|-------|
-| File Name     | `runner.ocx` |
-| SHA256        | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
-| File Size     | `3.83 MB` |
-| File Type     | `PE64` |
-| Compile Time  | `2026-05-01 08:56:47 UTC` |
+| Field | Value |
+|-------|-------|
+| File Name | `runner.ocx` |
+| Internal Name | `runner.dll` |
+| SHA256 | `9a2d714ddd5c48722c35df8a70e97f12d46bcde05dc79b7242a7e692bd346826` |
+| MD5 | `9d6f7697c0fbea55d6bfb39642eb87df` |
+| SHA1 | `2b57771989fc059bbef8f28fc0ca24eeae7e7863` |
+| File Size | `3.83 MB` |
+| File Type | `PE64 DLL` |
+| Compile Time | `2026-05-01 08:56:47 UTC` |
 | C2 Domain | `xtrafftrck[.]net` |
-| C2 Port | `3000`|
-| C2 Protocol | `Web Socket (ws:// and wss://)` |
+| C2 Port | `3000` |
+| C2 Protocol | `WebSocket (ws://)` |
+| C2 Endpoint | `/ws/agent` |
+| Secondary Payload | `chromelevator.ocx` |
+| Secondary Payload | `wpad_capture.ocx` |
+| Debug Log | `C:\Users\UserID\Appdata\Local\Temp\lg.txt` |
+| Check | `Koki=YES Blat=YES` |
+| Compiler | `GCC 13 MinGW (cross-compiled on Linux)` |
+| Embedded Library | `IXWebSocket` |
+| Embedded Library | `mbed TLS 3.5.2` |
+| Embedded Library | `libjpeg-turbo 3.1.90` |
+| Embedded Library | `zlib 1.3.2` |
 
 ---
 
