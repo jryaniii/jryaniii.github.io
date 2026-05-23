@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Part 1: Runner.ocx Malware Analysis"
+title: "Part 1: Reversing a WebSocket-Based Backdoor - Execution Flow and C2 Interaction
 date: 2026-05-18
 categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
@@ -209,11 +209,11 @@ I created a responder python script for the C2 domain listening on port 3000. Th
 
 ## Interacting with the Malware via Custom C2 Responder
 
-With the hosts file redirecting, I fired up a custom Python WebSocket server to simulate the `Chopi` C2 dashboard. The malware connected on `/ws/agent` exactly as the FLOSS strings predicted.
+With the hosts file redirecting, I fired up a custom Python WebSocket server and ran the malware. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/c2-success-3.png" alt="c2-success" width="800">
 
-Sending commands confirmed the C2 protocol uses JSON with a `type` field. The malware responds with a matching `<command>_result` type. Three commands returned live responses.
+Success! The malware connected on `/ws/agent`.  Sending commands confirmed the C2 protocol uses JSON with a `type` field. The malware responds with a matching `<command>_result` type. Four commands returned live responses.
 
 `chrome_extract` returned:
 ```json

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Part 2: Runner.ocx Mapping the Infrastructure"
+title: "Part 2: From Malware to Infrastructure - Investigating the C2 Behind a WebSocket Backdoor"
 date: 2026-05-21
 categories: [malware, threat intelligence,]
 tags: [virustotal, shodan, censys, threatfox]
