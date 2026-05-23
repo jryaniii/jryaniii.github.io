@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Part 1: Reversing a WebSocket-Based Backdoor - Execution Flow and C2 Interaction"
+title: "Part 1: Dissecting a WebSocket RAT - From Static Analysis to Live C2 Interaction"
 date: 2026-05-18
 categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
