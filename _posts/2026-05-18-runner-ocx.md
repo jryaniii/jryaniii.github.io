@@ -6,7 +6,7 @@ categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 ---
 ## Introduction
-In this analysis, we dive deep into Aa full featured RAT with credential harvesting and lateral movement capability. Our workflow will look something like this:
+This sample is a WebSocket-based backdoor that enables remote command execution and post-compromise activity. Its functionality includes credential harvesting, system and network enumeration, and potential lateral movement through authenticated remote actions. Our workflow will look something like this:
 
 1. `Static Analysis` using Capa, Floss, DIE, PEStats, Ghidra
 2. `Dynamic Analysis` using x64dbg, FakeNet-NG, Custom Python C2
@@ -68,7 +68,7 @@ The results are in! The malware has low entropy and is thus not packed. Lucky us
 
 ## PEStats
 
-PEStats is a custom tool built by SANs instructor Anoj Soni. This tool assists by providing binary compile timestamps, exports, packing, entry points and internal file name of the malware.
+PEStats is a custom tool built by SANs instructor Anuj Soni. This tool assists by providing binary compile timestamps, exports, packing, entry points and internal file name of the malware.
 
 1. Compile timestamp is `2026-05-01 08:56:47 UTC`
 2. `No Packing` confirmed
@@ -211,7 +211,7 @@ I created a responder python script for the C2 domain listening on port 3000. Th
 
 With the hosts file redirecting, I fired up a custom Python WebSocket server to simulate the `Chopi` C2 dashboard. The malware connected on `/ws/agent` exactly as the FLOSS strings predicted.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/c2-success-2.png" alt="c2-success-" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/c2-success-3.png" alt="c2-success" width="800">
 
 Sending commands confirmed the C2 protocol uses JSON with a `type` field. The malware responds with a matching `<command>_result` type. Three commands returned live responses.
 
@@ -274,7 +274,7 @@ Setting a breakpoint on `DllInstall` and searching the current module for string
 <img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
 
 # Conclusion
- We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
+ The combination of WebSocket-based C2, credential extraction capabilities, and remote execution functionality indicates this malware is intended for post-compromise operations. Its design suggests use as a lightweight backdoor for maintaining access and facilitating lateral movement within a compromised environment. We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
 
 In part 2 of the series, I dive into threat intelligence and aim to map out the malwares infrastructure. You can find the link [Part 2: Runner.ocx Mapping the Infrastructure](https://jryaniii.github.io/posts/runner-threat-intel/).
 
