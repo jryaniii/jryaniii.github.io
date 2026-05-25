@@ -120,11 +120,11 @@ It's time to have some fun and start playing with the malware in real time. Let'
 
 ## x64dbg - Dllinstall
 
-So far in our analysis, we've seen the exported function DllInstall appear a few times. Let's look into this function. 
+So far in our analysis, we've seen the exported function DllInstall appear a few times. Let's look into this API. 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/1-1.png" alt="x64dbg reveals proper filename" width="600">
 
-Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and run the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
+Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and ran the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
 
 
 # FakeNet - Network Analysis
