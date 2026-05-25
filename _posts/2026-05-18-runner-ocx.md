@@ -240,7 +240,7 @@ The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must 
 {"data":{"error":"Chrome exited immediately with code 0. Path: C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe","success":false},"type":"cdp_start_result"}
 ```
 
-`net_enumerate` produced the best response yet. The command enumerated my entire network. Wow!
+`net_enumerate` produced the best response yet. The command enumerated my entire network. Wow!!
 
 ```json
 {"data":{"hosts":[{"domain":"WORKGROUP","fqdn":"JohnDesktop","hostname":"JOHNDESKTOP","ip":"10.0.0.1","mac":"08:00:27:a7:24:14","os":"","ports":[135,139,445,3389],"source":"enumerate"},{"domain":"","fqdn":"DESKTOP-VT730LL","hostname":"","ip":"10.0.0.2","mac":"08:00:ff:88:7b","os":"","ports":[135,139,445],"source":"enumerate"}]}}
