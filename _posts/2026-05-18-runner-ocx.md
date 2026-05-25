@@ -146,7 +146,7 @@ AgentThread Functionality
 
 In an effort to get better at x64dbg and reverse engineering, I set off to find where in the malware the C2 and port were called in memory. To accomplish this task, I set a breakpoint on ws2_32connect in x64dbg. Once I landed on the breakpoint, I stepped through the code until I was able to find the C2 domain. VirusTotal confirms xtrafftrck[.]net is still live and malicious with 20/93 vendors flagging.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain2.png" alt="C2 Domain" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/domain.png" alt="C2 Domain" width="600">
 
 So we have the domain, now let's find the port number it uses to dial out. I dump RDX to memory to reveal two bytes with a value of 0xBB8 which translates to 3,000 or port 3000. 
 
