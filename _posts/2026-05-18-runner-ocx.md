@@ -126,22 +126,6 @@ So far in our analysis, we've seen the exported function DllInstall appear a few
 
 Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and ran the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
 
-
-# FakeNet - Network Analysis
-
-Fakenet-NG is a tool that allows you to intercept and redirect all or specific network traffic while simulating legitimate network services. I used FakeNet-NG for dynamic network analysis. After renaming dr-dll.exe to runner.ocx, I execute the malware and notice the AgentThread started! The filename check passed and it ran it's initialization code.
-
-<img src="/assets/images/posts/2026-05-18-runner-ocx/fakenet-ng.png" alt="fakenet-ng" width="800">
-
-Note that earlier in our analysis, we found that the DllInstall export API contained a filename check. The check is required to pass in order to execute AgentThread. Further analysis in Ghidra revealed to us AgentThread's purpose.
-
-AgentThread Functionality
-1. WSAStartup
-2. DNS lookup for xtrafftrck[.]net
-3. TCP connection to port 3000
-4. WebSocket handshake
-5. C2 communication
-
 ## x64dbg - ws2_32connect
 
 In an effort to get better at x64dbg and reverse engineering, I set off to find where in the malware the C2 and port were called in memory. To accomplish this task, I set a breakpoint on ws2_32connect in x64dbg. Once I landed on the breakpoint, I stepped through the code until I was able to find the C2 domain. VirusTotal confirms xtrafftrck[.]net is still live and malicious with 20/93 vendors flagging.
@@ -161,6 +145,52 @@ In x64 Windows calling convention those map to:
     - RDX = port/service string > points to "3000" as a string
  ```       
 
+ ## x64dbg - lg.txt 
+
+During debugging, I came across an interesting file path in the stack.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="400">
+
+Let's examine `C:\Users\johnrAppData\Local\Temp\lg.txt`.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-goldmine.png" alt="lg-goldmine" width="800">
+
+Investigating the file reveals a goldmine of information. We can see strings similar to the ones FLOSS had provided to us during static analysis.
+
+1. Koki cmd=[
+2. AgentThread
+3. DllInstall
+
+Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `Blat` parameters pass the check, `Agentthread` is started. 
+
+What's more is we can see the C2 domain is contacted via `AgentThread` and is sending our `hostname`, `userID` and `local IP address`. The files purpose is to aide in threat actor in debugging the malware. The lg.txt file discovery has confirmed a few hypothesis's we established early on in our analysis. AgentThread is the C2 domain connection process. DllInstall is our malware entry point and Koki=[ is our command parameter check.
+
+## x64dbg - Koki Check
+
+The `Koki` cmd contains the full command line used to invoke the malware. The `tail` parameter extracts just the filename from that command line, in this case runner.ocx. 
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/koki-string-search.png" alt="koki-string-search" width="800">
+
+In the above screenshot, we set a breakpoint on `DllInstall` and then performed a string search inthe current module for `koki`. Next, we jump to the address of the first koki reference and see the check in realtime.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
+
+Note the beginning and end of the Koki check. In between the two we have the full file path related of the malware. 
+
+## Network Analysis - FakeNet
+
+Fakenet-NG is a tool that allows you to intercept and redirect all or specific network traffic while simulating legitimate network services. I used FakeNet-NG for dynamic network analysis. After renaming dr-dll.exe to runner.ocx, I execute the malware and notice the AgentThread started! The filename check passed and it ran it's initialization code.
+
+<img src="/assets/images/posts/2026-05-18-runner-ocx/fakenet-ng.png" alt="fakenet-ng" width="800">
+
+Note that earlier in our analysis, we found that the DllInstall export API contained a filename check. The check is required to pass in order to execute AgentThread. Further analysis in Ghidra revealed to us AgentThread's purpose.
+
+AgentThread Functionality
+1. WSAStartup
+2. DNS lookup for xtrafftrck[.]net
+3. TCP connection to port 3000
+4. WebSocket handshake
+5. C2 communication
 
 # Calculating Relative Virtual Address (RVA)
 We noted in Ghidra that we suspect the command dispatch function decrypts it's windows commands during runtime. To test this theory, we need to set a breakpoint in x64dbg on the decryption function 25819fE10. However, Ghidra addresses do not directly translate to runtime addresses in x64dbg, especially if ASLR is enabled. We'll need the relative virtual address in x64dbg to set a proper breakpoint.
@@ -248,36 +278,6 @@ The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must 
 The net_enuemrate command went through 4 phases of scanning. `arp` to discover additional hosts, `netbios` name resolution, `scanning` port scanning and `smb` enumeration. We also received hostnames, MAC addresses, IP addresses, open ports, workgroup membership, and RDP exposure. This serves as foundational data for a threat actor.
 
 These responses confirm that operator tasking happens exclusively over the WebSocket connection using JSON commands.
-
-## x64dbg - lg.txt 
-
-During debugging, I came across an interesting file path in the stack.
-
-<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="400">
-
-Let's examine `C:\Users\johnrAppData\Local\Temp\lg.txt`.
-
-<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-goldmine.png" alt="lg-goldmine" width="800">
-
-Investigating the file reveals a goldmine of information. We can see strings similar to the ones FLOSS had provided to us during static analysis.
-
-1. Koki cmd=[
-2. AgentThread
-3. DllInstall
-
-Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `Blat` parameters pass the check, `Agentthread` is started. 
-
-What's more is we can see the C2 domain is contacted via `AgentThread` and is sending our `hostname`, `userID` and `local IP address`. The files purpose is to aide in threat actor in debugging the malware. The lg.txt file discovery has confirmed a few hypothesis's we established early on in our analysis. AgentThread is the C2 domain connection process. DllInstall is our malware entry point and Koki=[ is our command parameter check.
-
-## Koki Check
-
-The `Koki` cmd contains the full command line used to invoke the malware. The `tail` parameter extracts just the filename from that command line, in this case runner.ocx. 
-
-<img src="/assets/images/posts/2026-05-18-runner-ocx/koki-string-search.png" alt="koki-string-search" width="800">
-
-Setting a breakpoint on `DllInstall` and searching the current module for string `koki`. 
-
-<img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
 
 # Conclusion
  The combination of WebSocket-based C2, credential extraction capabilities, and remote execution functionality indicates this malware is intended for post-compromise operations. Its design suggests use as a lightweight backdoor for maintaining access and facilitating lateral movement within a compromised environment. We used static analysis to uncover as much information as we can before moving on to dynamic analysis. While this part may not be the most fun it certainly aides in better understanding the malware you're investigating. Later, we moved on to dynamic analysis where we executed the malware in a controlled environment. We discovered the C2 domain, port address and correct malware name in x64dbg. We then pivoted to developing a custom C2 responder in python that allowed us to interact with the malware in realtime.
