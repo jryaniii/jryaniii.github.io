@@ -175,7 +175,7 @@ In the above screenshot, we set a breakpoint on `DllInstall` and then performed 
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
 
-Note the beginning and end of the Koki check. In between the two we have the full file path related of the malware. 
+Note the beginning and end of the Koki check. In between the two we have the full file path of the runner.ocx malware. 
 
 ## Network Analysis - FakeNet
 
