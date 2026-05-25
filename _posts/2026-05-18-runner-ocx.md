@@ -122,7 +122,7 @@ It's time to have some fun and start playing with the malware in real time. Let'
 
 So far in our analysis, we've seen the exported function DllInstall appear a few times. Let's look into this function. 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/1.png" alt="x64dbg reveals proper filename" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/1-1.png" alt="x64dbg reveals proper filename" width="600">
 
 Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and run the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
 
@@ -146,7 +146,7 @@ AgentThread Functionality
 
 In an effort to get better at x64dbg and reverse engineering, I set off to find where in the malware the C2 and port were called in memory. To accomplish this task, I set a breakpoint on ws2_32connect in x64dbg. Once I landed on the breakpoint, I stepped through the code until I was able to find the C2 domain. VirusTotal confirms xtrafftrck[.]net is still live and malicious with 20/93 vendors flagging.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain.png" alt="C2 Domain" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/C2-domain2.png" alt="C2 Domain" width="800">
 
 So we have the domain, now let's find the port number it uses to dial out. I dump RDX to memory to reveal two bytes with a value of 0xBB8 which translates to 3,000 or port 3000. 
 
@@ -217,7 +217,7 @@ I created a responder python script for the C2 domain listening on port 3000. Th
 
 With the hosts file redirecting, I fired up a custom Python WebSocket server and ran the malware. 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/c2-success-3.png" alt="c2-success" width="800">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/c2-success-4.png" alt="c2-success" width="800">
 
 Success! The malware connected on `/ws/agent`.  Sending commands confirmed the C2 protocol uses JSON with a `type` field. The malware responds with a matching `<command>_result` type. Four commands returned live responses.
 
@@ -245,7 +245,7 @@ The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must 
 ```json
 {"data":{"hosts":[{"domain":"WORKGROUP","fqdn":"JohnDesktop","hostname":"JOHNDESKTOP","ip":"10.0.0.1","mac":"08:00:27:a7:24:14","os":"","ports":[135,139,445,3389],"source":"enumerate"},{"domain":"","fqdn":"DESKTOP-VT730LL","hostname":"","ip":"10.0.0.2","mac":"08:00:ff:88:7b","os":"","ports":[135,139,445],"source":"enumerate"}]}}
 ```
-It went through 4 phases of scanning. `arp` to discover additional hosts, `netbios` name resolution, `scanning` port scanning and `smb` enumeration. We also received hostnames, MAC addresses, IP addresses, open ports, workgroup membership, and RDP exposure. This serves as foundational data for a threat actor.
+The net_enuemrate command went through 4 phases of scanning. `arp` to discover additional hosts, `netbios` name resolution, `scanning` port scanning and `smb` enumeration. We also received hostnames, MAC addresses, IP addresses, open ports, workgroup membership, and RDP exposure. This serves as foundational data for a threat actor.
 
 These responses confirm that operator tasking happens exclusively over the WebSocket connection using JSON commands.
 

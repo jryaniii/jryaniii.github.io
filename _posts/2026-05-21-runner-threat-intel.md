@@ -2,14 +2,15 @@
 layout: post
 title: "Part 2: From Malware to Infrastructure - Investigating the C2 Behind a WebSocket RAT"
 date: 2026-05-21
-categories: [malware, threat intelligence,]
+categories: [malware, threat intelligence]
 tags: [virustotal, shodan, censys, threatfox]
 ---
-## Overview
+## Approach
 
-Threat intelligence performed on the runner.ocx sample using VirusTotal, Shodan, and Censys uncovered what appears to be a dedicated threat campaign. This post maps the threat actor's infrastructure and concludes with an assessment of their likely motivations.
+This post focuses on the infrastructure behind the runner.ocx sample. Using tools like VirusTotal, Shodan, and Censys, I pivoted off the C2 domain to identify related IPs, domains, and shared artifacts.
 
----
+The goal was to map out how the infrastructure is set up and see if there are any patterns linking the activity together.
+
 
 ## Malware Summary
 
@@ -164,8 +165,15 @@ The attackers campaign activity was seen active between March to April 2026. Inf
 
 ## Conclusion
 
-During our threat intelligence campaign, we used various web tools to bring together disparate artifacts. Together they map out the attackers infrastructure, attack patterns and opsec strengths and weaknesses. Small mistakes in operator security, like certificate reuse and consistent infrastructure patterns, are what ultimately expose a threat actor's full campaign.
+This started with a single malware sample and led into the infrastructure behind it. Using VirusTotal, Shodan, and Censys, I was able to find related domains, shared IPs, and some certificate reuse tying things together.
 
+Looking at the infrastructure, a few patterns stand out. Multiple domains resolve to the same IP and share hosting. There’s also certificate reuse between domains. The Chopi dashboard on port 3000 lines up with the C2 behavior seen in the malware.
+
+Building out the attack chain helped connect everything back to execution. The WebDAV share, the .lnk loader, and the use of regsvr32 show how the payload is pulled down and executed, then connects back to the C2.
+
+There are still some gaps. I’m not sure how the .lnk file is initially delivered, and I wasn’t able to determine what Credentials.txt contains.
+
+Overall, small pieces like tags, certificates, and shared infrastructure made it possible to move from one sample to a broader view of the activity.
 ## References
 
 - [Threat Fox](https://threatfox.abuse.ch/browse/tag/chopi/)
