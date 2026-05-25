@@ -6,7 +6,7 @@ categories: [malware, RAT, C2]
 tags: [capa, floss, die, pe-stats, pe-analysis, ghidra, x64dbg]
 ---
 ## Introduction
-This sample is a WebSocket-based backdoor that enables remote command execution and post-compromise activity. Its functionality includes credential harvesting, system and network enumeration, and potential lateral movement through authenticated remote actions. Our workflow will look something like this:
+This malware sample is a WebSocket-based backdoor that enables remote command execution and post-compromise activity. Its functionality includes credential harvesting, system and network enumeration, and lateral movement through authenticated remote actions. Our workflow will look something like this:
 
 1. `Static Analysis` using Capa, Floss, DIE, PEStats, Ghidra
 2. `Dynamic Analysis` using x64dbg, FakeNet-NG, Custom Python C2
@@ -130,7 +130,7 @@ Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and ran the pr
 
 In an effort to get better at x64dbg and reverse engineering, I set off to find where in the malware the C2 and port were called in memory. To accomplish this task, I set a breakpoint on ws2_32connect in x64dbg. Once I landed on the breakpoint, I stepped through the code until I was able to find the C2 domain. VirusTotal confirms xtrafftrck[.]net is still live and malicious with 20/93 vendors flagging.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/domain.png" alt="C2 Domain" width="600">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/domain.png" alt="C2 Domain" width="800">
 
 So we have the domain, now let's find the port number it uses to dial out. I dump RDX to memory to reveal two bytes with a value of 0xBB8 which translates to 3,000 or port 3000. 
 
@@ -149,7 +149,7 @@ In x64 Windows calling convention those map to:
 
 During debugging, I came across an interesting file path in the stack.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="400">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="600">
 
 Let's examine `C:\Users\johnrAppData\Local\Temp\lg.txt`.
 
@@ -241,7 +241,7 @@ The next idea is to create a C2 responder in Python. I originally used FakeNet-N
 
 I created a responder python script for the C2 domain listening on port 3000. This is very cool as we're able to interact with the malicious executable as if we were the C2 server! To get this to work properly, I had to edit the windows host file C:\windows\system32\drivers\etc\hosts and add 127.0.0.1 xtrafftrck[.]net.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/python-script.png" alt="python-script" width="400">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/python-script.png" alt="python-script" width="600">
 
 ## Interacting with the Malware via Custom C2 Responder
 
