@@ -172,7 +172,7 @@ The `Koki` cmd contains the full command line used to invoke the malware. The `t
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/koki-string-search.png" alt="koki-string-search" width="800">
 
-In the above screenshot, we set a breakpoint on `DllInstall` and then performed a string search inthe current module for `koki`. Next, we jump to the address of the first koki reference and see the check in realtime.
+In the above screenshot, we set a breakpoint on `DllInstall` and then performed a string search in the current module for `koki`. Next, we jump to the address of the first koki reference and see the check in realtime.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/koki-check-disembler.png" alt="koki-check" width="800">
 
