@@ -152,7 +152,7 @@ During debugging, I came across an interesting file path in the stack.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/lg-zoomed.png" alt="lg.txt" width="600">
 
-Let's examine `C:\Users\johnrAppData\Local\Temp\lg.txt`.
+Let's examine `C:\Users\johnr\AppData\Local\Temp\lg.txt`.
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/lg-goldmine.png" alt="lg-goldmine" width="800">
 
@@ -162,7 +162,7 @@ Investigating the file reveals a goldmine of information. We can see strings sim
 2. AgentThread
 3. DllInstall
 
-Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `Blat` parameters pass the check, `Agentthread` is started. 
+Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `B lat` parameters pass the check, `Agentthread` is started. 
 
 What's more is we can see the C2 domain is contacted via `AgentThread` and is sending our `hostname`, `userID` and `local IP address`. The files purpose is to aide in threat actor in debugging the malware. The lg.txt file discovery has confirmed a few hypothesis's we established early on in our analysis. AgentThread is the C2 domain connection process. DllInstall is our malware entry point and Koki=[ is our command parameter check.
 
@@ -203,11 +203,11 @@ In x64dbg, we load up our malware and open memory map. We locate runner.ocx and 
 ## Ghidra + x64dbg Image Base
 The decryption function FUN_25819fe10 is called before every command executes in the CommandDispatch function.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/ghidra-imagebase.png" alt="ghidra imagebase" width="400">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/ghidra-imagebase.png" alt="ghidra imagebase" width="600">
 
 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/x64-imagebase.png" alt="x64-imagebase" width="400">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/x64-imagebase.png" alt="x64-imagebase" width="600">
 
 The two screenshots above highlight the base images for Ghidra and x64dbg. Ghidra base image is 257e90000. Let's calculate the RVA so we can breakpoint on this function in x64dbg.
 
