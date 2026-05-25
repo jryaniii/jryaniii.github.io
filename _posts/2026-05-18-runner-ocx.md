@@ -54,9 +54,9 @@ FLOSS also reveals a few other malware capabilities.
 - Clipboard Access
 - Microphone recording
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="400" style="display:block !important; margin-left:0 !important;">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="600" style="display:block !important; margin-left:0 !important;">
 
-Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could surmise AgentThread won't start if the filename check does not pass. We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. 
+Looking at the screenshot above, Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could surmise AgentThread won't start if the filename check does not pass. We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. 
 
 Two more strings stand out. 
 - chromelevator.ocx
@@ -68,7 +68,7 @@ We'll come to find these two `ocx` files are dropped payloads during post-exploi
 
 Using Detect-it-Easy, we can determine if our malware is packed. By examining levels of entropy or randomness, we can determine whether the malware has been packed.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="400" style="display:block !important; margin-left:0 !important;">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="600" style="display:block !important; margin-left:0 !important;">
 
 The results are in! The malware has low entropy and is thus not packed. Lucky us!
 
@@ -110,7 +110,7 @@ While walking through the functions in Ghidra, I found a function for used for C
 | `Discovery` | `T1018 - Remote System Discovery` | `net_enumerate` |
 | `Lateral Movement` | `T1550.002 - Pass the Hash` | `remote_logon` |
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="400">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="600">
 
 In the above screenshot, you can see the encrypted command named &DAT_2581afcc0. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
 
@@ -122,7 +122,7 @@ It's time to have some fun and start playing with the malware in real time. Let'
 
 So far in our analysis, we've seen the exported function DllInstall appear a few times. Let's look into this API. 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/1-1.png" alt="x64dbg reveals proper filename" width="600">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/1-1.png" alt="x64dbg reveals proper filename" width="800">
 
 Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and ran the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
 
