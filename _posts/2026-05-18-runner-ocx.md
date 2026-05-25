@@ -54,7 +54,7 @@ FLOSS also reveals a few other malware capabilities.
 - Clipboard Access
 - Microphone recording
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="600" style="display:block !important; margin-left:0 !important;">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="800" style="display:block !important; margin-left:0 !important;">
 
 Looking at the screenshot above, Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could surmise AgentThread won't start if the filename check does not pass. We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. 
 
@@ -68,7 +68,7 @@ We'll come to find these two `ocx` files are dropped payloads during post-exploi
 
 Using Detect-it-Easy, we can determine if our malware is packed. By examining levels of entropy or randomness, we can determine whether the malware has been packed.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="600" style="display:block !important; margin-left:0 !important;">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/die-entropy.png" alt="die-entropy" width="800" style="display:block !important; margin-left:0 !important;">
 
 The results are in! The malware has low entropy and is thus not packed. Lucky us!
 
@@ -110,7 +110,7 @@ While walking through the functions in Ghidra, I found a function for used for C
 | `Discovery` | `T1018 - Remote System Discovery` | `net_enumerate` |
 | `Lateral Movement` | `T1550.002 - Pass the Hash` | `remote_logon` |
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="600">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/decryption-function.png" alt="decryption-function" width="800">
 
 In the above screenshot, you can see the encrypted command named &DAT_2581afcc0. I thought if we set a breakpoint at the decryption function FUN_25819fe10 in x64dbg, I might be able to view the C2 commands decrypt in realtime. 
 
@@ -144,6 +144,7 @@ In x64 Windows calling convention those map to:
     - RCX = hostname > xtrafftrck[.]net
     - RDX = port/service string > points to "3000" as a string
  ```       
+
 
  ## x64dbg - lg.txt 
 
