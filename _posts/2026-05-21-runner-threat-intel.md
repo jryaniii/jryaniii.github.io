@@ -160,7 +160,7 @@ In our previous post, we found the threat actors intended initial steps post-exp
 
 The attackers campaign activity was seen active between March to April 2026. Infrastructure domain names incorporate payment and legal services suggesting deliberate targeting of financial and legal sectors. Based on post-exploitation capabilities observed in the malware, the operator's likely objective is credential harvesting and financial gain. Further OSINT investigation reveals screenly[.]cam hosting a financial invoice request for $69,000 EUR. The overall profile is consistent with a financially motivated threat actor.
 
-<img src="/assets/images/posts/2026-05-21-runner-threat-intel/fraud.png" alt="fraud" width="800">
+<img src="/assets/images/posts/2026-05-21-runner-threat-intel/fraud.png" alt="fraud" width="400">
 
 ## Conclusion
 
