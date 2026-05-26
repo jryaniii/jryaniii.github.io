@@ -124,7 +124,7 @@ So far in our analysis, we've seen the exported function DllInstall appear a few
 
 <img src="/assets/images/posts/2026-05-18-runner-ocx/1-1.png" alt="x64dbg reveals proper filename" width="800">
 
-Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and ran the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. 
+Using the symbols tab in x64dbg, I set a breakpoint on DllInstall and ran the program. I land on the DllInstall API call and proceed to step through the code. While stepping through the code, the filename appears in the stack. We have identified the correct filename `runner.ocx`. I should note that I had originally named the malware `dr.dll.exe` when I initially downloaded it from `MalwareBazaar`. The wrong file name prevents the malware from initiating. This was a good discovery.
 
 ## x64dbg - ws2_32connect
 
@@ -138,15 +138,15 @@ So we have the domain, now let's find the port number it uses to dial out. I dum
 
 When you see ws2_32.dll being called for a network connection, the likely function is getaddrinfo or connect. The code snippet below maps the function inputs to windows registers. 
 
-```
+````
 getaddrinfo(hostname, port_or_service, hints, result)
 In x64 Windows calling convention those map to:
     - RCX = hostname > xtrafftrck[.]net
     - RDX = port/service string > points to "3000" as a string
- ```       
+ ````     
 
 
- ## x64dbg - lg.txt 
+## x64dbg - lg.txt
 
 During debugging, I came across an interesting file path in the stack.
 
