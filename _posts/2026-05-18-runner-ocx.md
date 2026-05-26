@@ -274,7 +274,7 @@ The WPAD poisoning capability follows the same pattern. `wpad_capture.ocx` must 
 `net_enumerate` produced the best response yet. The command enumerated my entire network. Wow!!
 
 ```json
-{"data":{"hosts":[{"domain":"WORKGROUP","fqdn":"JohnDesktop","hostname":"JOHNDESKTOP","ip":"10.0.0.1","mac":"08:00:27:a7:24:14","os":"","ports":[135,139,445,3389],"source":"enumerate"},{"domain":"","fqdn":"DESKTOP-VT730LL","hostname":"","ip":"10.0.0.2","mac":"08:00:ff:88:7b","os":"","ports":[135,139,445],"source":"enumerate"}]}}
+{"data":{"hosts":[{"domain":"WORKGROUP","fqdn":"JohnDesktop","hostname":"JOHNDESKTOP","ip":"10.0.0.1","mac":"08:00:27:a7:24:14","os":"","ports":[135,139,445,3389],"source":"enumerate"}
 ```
 The net_enuemrate command went through 4 phases of scanning. `arp` to discover additional hosts, `netbios` name resolution, `scanning` port scanning and `smb` enumeration. We also received hostnames, MAC addresses, IP addresses, open ports, workgroup membership, and RDP exposure. This serves as foundational data for a threat actor.
 
