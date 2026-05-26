@@ -203,11 +203,11 @@ In x64dbg, we load up our malware and open memory map. We locate runner.ocx and 
 ## Ghidra + x64dbg Image Base
 The decryption function FUN_25819fe10 is called before every command executes in the CommandDispatch function.
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/ghidra-imagebase.png" alt="ghidra imagebase" width="600">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/ghidra-imagebase.png" alt="ghidra imagebase" width="500">
 
 
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/x64-imagebase.png" alt="x64-imagebase" width="600">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/x64-imagebase.png" alt="x64-imagebase" width="500">
 
 The two screenshots above highlight the base images for Ghidra and x64dbg. Ghidra base image is 257e90000. Let's calculate the RVA so we can breakpoint on this function in x64dbg.
 
