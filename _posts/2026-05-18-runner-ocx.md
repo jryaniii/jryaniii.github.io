@@ -54,7 +54,7 @@ FLOSS also reveals a few other malware capabilities.
 - Clipboard Access
 - Microphone recording
 
-<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="800" style="display:block !important; margin-left:0 !important;">
+<img src="/assets/images/posts/2026-05-18-runner-ocx/floss-dllinstall.png" alt="floss-dllinstall" width="600" style="display:block !important; margin-left:0 !important;">
 
 Looking at the screenshot above, Dllinstall looks to initialize a thread named AgentThread. Looking at "CreateThread Failed," we could surmise AgentThread won't start if the filename check does not pass. We also come across what appears to be a conditional check. Dllinstall is referenced once again. It should serve as a good investigation point in our Ghidra analysis later. 
 
