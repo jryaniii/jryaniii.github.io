@@ -23,7 +23,7 @@ The goal was to map out how the infrastructure is set up and see if there are an
 
 ---
 ## Getting Started - VirusTotal
-VirusTotal is a great way to start. It reveals a gold mine of information like domain reputation, related IP addresses, https certificate details, passive DNS & community notes.
+VirusTotal is a great way to start. It reveals a lots of information like domain reputation, related IP addresses, https certificate details, passive DNS & community notes.
 
 Here's what we discovered in our initial VirusTotal analysis on the C2 domain.
 
