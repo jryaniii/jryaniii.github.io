@@ -162,7 +162,7 @@ Investigating the file reveals a goldmine of information. We can see strings sim
 2. AgentThread
 3. DllInstall
 
-Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `B lat` parameters pass the check, `Agentthread` is started. 
+Look closely at line 3, we can see the conditional parameter check `Found=YES`. We discussed the file name check earlier in our analysis. If the `Koki` and `Blat` parameters pass the check, `Agentthread` is started. 
 
 What's more is we can see the C2 domain is contacted via `AgentThread` and is sending our `hostname`, `userID` and `local IP address`. The files purpose is to aide in threat actor in debugging the malware. The lg.txt file discovery has confirmed a few hypothesis's we established early on in our analysis. AgentThread is the C2 domain connection process. DllInstall is our malware entry point and Koki=[ is our command parameter check.
 
